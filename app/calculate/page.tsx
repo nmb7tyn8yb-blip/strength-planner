@@ -339,17 +339,18 @@ function StartingStrengthResults({
 function HepburnResults({ startingWeights }: { startingWeights: Record<WendlerLift, number> }) {
   return (
     <div className="mt-10">
-      <h2 className="font-display text-xl font-semibold">Тренировка 1 — 8×2</h2>
+      <h2 className="font-display text-xl font-semibold">Седмица 1 — 1×3 + 7×2</h2>
       <p className="mt-1 text-sm text-chalkDim">
-        Започваш от 8 серии по 2 повторения. При всяка успешна тренировка една двойка
-        става тройка, докато стигнеш 8×3 — тогава се добавя тежест и цикълът започва
-        отначало.
+        Прогресията е седмична — тренираш този lift 2 пъти седмично (по класическото
+        разписание), с една и съща схема през цялата седмица. Всяка следваща седмица
+        една двойка става тройка, докато стигнеш 8×3 — тогава се добавя тежест и
+        цикълът започва отново.
       </p>
 
       <div className="mt-6 grid gap-6">
         {LIFTS.map((lift) => {
           const startWeight = startingWeights[lift.key];
-          const state = { workingWeightKg: startWeight, schemeIndex: 0, consecutiveFailures: 0 };
+          const state = { workingWeightKg: startWeight, schemeIndex: 1, consecutiveFailures: 0 };
           const warmup = generateHepburnWarmup(startWeight, HEPBURN_SETTINGS);
           const workingSets = planHepburnLift(state);
 
@@ -372,7 +373,7 @@ function HepburnResults({ startingWeights }: { startingWeights: Record<WendlerLi
               </div>
 
               <p className="mt-4 text-xs uppercase tracking-widest text-chalkDim">
-                Работни серии (8×2 — {startWeight} kg)
+                Работни серии тази седмица (1×3 + 7×2 — {startWeight} kg)
               </p>
               <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-8">
                 {workingSets.map((set, i) => (
