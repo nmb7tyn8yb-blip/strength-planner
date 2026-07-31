@@ -75,7 +75,25 @@ function CalculateInner() {
     LIFTS.map((l) => [l.key, Number(maxes[l.key]) || 0])
   ) as Record<WendlerLift, number>;
 
-  const inputLabel = programSlug === "starting-strength" ? "работна тежест" : "1RM";
+  const isStartingStrength = programSlug === "starting-strength";
+  const inputLabel = "1RM (реален или приблизителен)";
+
+  // Официалната Starting Strength НЕ използва проценти от 1RM — Rippetoe буквално
+  // казва "започни по-леко, отколкото мислиш, че можеш", без фиксирана формула.
+  // Истинските калкулатори питат за скорошен работен сет и смятат 5RM оттам.
+  // Тук нямаме такъв сет, затова оценяваме 5RM по формулата на Brzycki
+  // (5RM ≈ 1RM × 32/36 ≈ 89%) и добавяме ~10% запас за безопасност на първата
+  // тренировка — това Е ПРЕЦЕНКА НА ПРИЛОЖЕНИЕТО, не правило от оригинала.
+  const estimatedFiveRM = (oneRepMax: number) => oneRepMax * (32 / 36);
+  const SAFETY_BUFFER = 0.9;
+  const effectiveStartingWeights = Object.fromEntries(
+    LIFTS.map((l) => [
+      l.key,
+      isStartingStrength
+        ? Math.round((estimatedFiveRM(numericMaxes[l.key]) * SAFETY_BUFFER) / 2.5) * 2.5
+        : numericMaxes[l.key],
+    ])
+  ) as Record<WendlerLift, number>;
 
   return (
     <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
@@ -88,8 +106,8 @@ function CalculateInner() {
           Калкулатор — без регистрация
         </h1>
         <p className="mt-2 text-chalkDim">
-          Въведи {inputLabel === "1RM" ? "максимумите" : "стартовите тежести"} си и виж
-          реалния план веднага. Ще пазим нищо, докато сам не решиш да запазиш прогреса си.
+          Въведи максимумите си и виж реалния план веднага. Ще пазим нищо, докато сам не
+          решиш да запазиш прогреса си.
         </p>
 
         {!supported && (
@@ -107,8 +125,18 @@ function CalculateInner() {
           </div>
         )}
 
-        {supported && !showResults && (
-          <form onSubmit={handleCalculate} className="mt-10 grid gap-6">
+        {supported && !showResults && isStartingStrength && (
+          <p className="mt-6 text-sm text-amber">
+            Официалната програма не смята по проценти — Rippetoe просто съветва да
+            започнеш по-леко, отколкото мислиш, че можеш. Ще изчислим безопасна начална
+            тежест от оценка за 5 повторения (формула на Brzycki + запас) — това е наша
+            преценка, не фиксирано правило от оригинала. Тежестта бързо ще настигне
+            истинската ти сила.
+          </p>
+        )}
+
+{supported && !showResults && (
+          <form onSubmit={handleCalculate} className="mt-6 grid gap-6">
             <div className="grid grid-cols-2 gap-4">
               {LIFTS.map((lift) => (
                 <div key={lift.key}>
@@ -143,7 +171,7 @@ function CalculateInner() {
         )}
 
         {supported && showResults && programSlug === "starting-strength" && (
-          <StartingStrengthResults numericMaxes={numericMaxes} />
+          <StartingStrengthResults numericMaxes={effectiveStartingWeights} wasReduced={isStartingStrength} />
         )}
 
         {supported && showResults && (
@@ -213,7 +241,13 @@ function Wendler531Results({ numericMaxes }: { numericMaxes: Record<WendlerLift,
   );
 }
 
-function StartingStrengthResults({ numericMaxes }: { numericMaxes: Record<WendlerLift, number> }) {
+function StartingStrengthResults({
+  numericMaxes,
+  wasReduced,
+}: {
+  numericMaxes: Record<WendlerLift, number>;
+  wasReduced: boolean;
+}) {
   const state = initStartingStrengthState({
     squat: numericMaxes.squat,
     benchPress: numericMaxes.bench_press,
@@ -228,8 +262,10 @@ function StartingStrengthResults({ numericMaxes }: { numericMaxes: Record<Wendle
         Тренировка {session.sessionType} — твоята първа стъпка
       </h2>
       <p className="mt-1 text-sm text-chalkDim">
-        Тежестта расте на всяка следваща успешна тренировка. Загряването е изчислено
-        автоматично спрямо работната тежест.
+        {wasReduced
+          ? "Тежестите по-долу са консервативна оценка (5RM по формула + запас за безопасност) — не фиксирано правило от оригинала, а разумен, безопасен старт."
+          : "Тежестта расте на всяка следваща успешна тренировка."}{" "}
+        Загряването е изчислено автоматично спрямо работната тежест.
       </p>
 
       <div className="mt-6 grid gap-6">
