@@ -41,7 +41,12 @@ function StartPageInner() {
   const [unitSystem, setUnitSystem] = useState<"kg" | "lb">("kg");
   const [plateIncrement, setPlateIncrement] = useState(2.5);
   const [sessionsPerWeek, setSessionsPerWeek] = useState(3);
-  const [maxes, setMaxes] = useState<Record<string, string>>({});
+  const [maxes, setMaxes] = useState<Record<string, string>>({
+    squat: searchParams.get("squat") ?? "",
+    bench_press: searchParams.get("bench") ?? "",
+    deadlift: searchParams.get("deadlift") ?? "",
+    overhead_press: searchParams.get("press") ?? "",
+  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
