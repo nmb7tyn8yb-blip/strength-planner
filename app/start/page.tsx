@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
 
@@ -15,6 +15,14 @@ const PRIMARY_LIFTS = [
 ] as const;
 
 export default function StartPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-graphite px-6 py-16 text-chalk" />}>
+      <StartPageInner />
+    </Suspense>
+  );
+}
+
+function StartPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const programSlug = searchParams.get("program") ?? "";
