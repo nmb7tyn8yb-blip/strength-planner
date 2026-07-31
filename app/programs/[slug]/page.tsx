@@ -141,10 +141,10 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
 
         <div className="mt-12 flex flex-wrap gap-4">
           <Link
-            href={`/start?program=${program.slug}`}
+            href={`/calculate?program=${program.slug}`}
             className="inline-flex items-center gap-3 border-2 border-amber bg-amber px-7 py-4 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
           >
-            Започни с тази програма →
+            Изчисли моя план →
           </Link>
           <Link
             href="/programs"
