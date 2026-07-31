@@ -14,6 +14,13 @@ import {
   planSession,
   type StartingStrengthSettings,
 } from "@/lib/starting-strength-generator";
+import {
+  planHepburnLift,
+  generateHepburnWarmup,
+  DEFAULT_HEPBURN_INCREMENTS_KG,
+  type HepburnSettings,
+  type HepburnLift,
+} from "@/lib/hepburn-generator";
 
 const LIFTS: { key: WendlerLift; label: string }[] = [
   { key: "squat", label: "Клек" },
@@ -36,7 +43,13 @@ const SS_SETTINGS: StartingStrengthSettings = {
   barWeightKg: 20,
 };
 
-const SUPPORTED_PROGRAMS = ["531", "starting-strength"];
+const SUPPORTED_PROGRAMS = ["531", "starting-strength", "hepburn-a"];
+
+const HEPBURN_SETTINGS: HepburnSettings = {
+  roundingIncrementKg: 2.5,
+  barWeightKg: 20,
+  failureThreshold: 3,
+};
 
 const LIFT_LABEL_BG: Record<string, string> = {
   squat: "Клек",
@@ -76,6 +89,7 @@ function CalculateInner() {
   ) as Record<WendlerLift, number>;
 
   const isStartingStrength = programSlug === "starting-strength";
+  const isHepburn = programSlug === "hepburn-a";
   const inputLabel = "1RM (реален или приблизителен)";
 
   // Официалната Starting Strength НЕ използва проценти от 1RM — Rippetoe буквално
@@ -86,13 +100,21 @@ function CalculateInner() {
   // тренировка — това Е ПРЕЦЕНКА НА ПРИЛОЖЕНИЕТО, не правило от оригинала.
   const estimatedFiveRM = (oneRepMax: number) => oneRepMax * (32 / 36);
   const SAFETY_BUFFER = 0.9;
+
+  // За Hepburn НАЧАЛНАТА тежест ~80% от 1RM Е документирана в оригиналния източник
+  // (Muscle & Strength, "Extreme Powerbuilding: The Hepburn Method") — не е наша преценка.
+  const HEPBURN_START_PERCENT = 0.8;
+
   const effectiveStartingWeights = Object.fromEntries(
-    LIFTS.map((l) => [
-      l.key,
-      isStartingStrength
-        ? Math.round((estimatedFiveRM(numericMaxes[l.key]) * SAFETY_BUFFER) / 2.5) * 2.5
-        : numericMaxes[l.key],
-    ])
+    LIFTS.map((l) => {
+      if (isStartingStrength) {
+        return [l.key, Math.round((estimatedFiveRM(numericMaxes[l.key]) * SAFETY_BUFFER) / 2.5) * 2.5];
+      }
+      if (isHepburn) {
+        return [l.key, Math.round((numericMaxes[l.key] * HEPBURN_START_PERCENT) / HEPBURN_SETTINGS.roundingIncrementKg) * HEPBURN_SETTINGS.roundingIncrementKg];
+      }
+      return [l.key, numericMaxes[l.key]];
+    })
   ) as Record<WendlerLift, number>;
 
   return (
@@ -135,6 +157,13 @@ function CalculateInner() {
           </p>
         )}
 
+        {supported && !showResults && isHepburn && (
+          <p className="mt-6 text-sm text-steelLight">
+            Началната тежест ще бъде ~80% от максимума ти — това е документирано в
+            оригиналния източник на метода, не наша преценка.
+          </p>
+        )}
+
 {supported && !showResults && (
           <form onSubmit={handleCalculate} className="mt-6 grid gap-6">
             <div className="grid grid-cols-2 gap-4">
@@ -172,6 +201,10 @@ function CalculateInner() {
 
         {supported && showResults && programSlug === "starting-strength" && (
           <StartingStrengthResults numericMaxes={effectiveStartingWeights} wasReduced={isStartingStrength} />
+        )}
+
+        {supported && showResults && programSlug === "hepburn-a" && (
+          <HepburnResults startingWeights={effectiveStartingWeights} />
         )}
 
         {supported && showResults && (
@@ -298,6 +331,60 @@ function StartingStrengthResults({
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function HepburnResults({ startingWeights }: { startingWeights: Record<WendlerLift, number> }) {
+  return (
+    <div className="mt-10">
+      <h2 className="font-display text-xl font-semibold">Тренировка 1 — 8×2</h2>
+      <p className="mt-1 text-sm text-chalkDim">
+        Започваш от 8 серии по 2 повторения. При всяка успешна тренировка една двойка
+        става тройка, докато стигнеш 8×3 — тогава се добавя тежест и цикълът започва
+        отначало.
+      </p>
+
+      <div className="mt-6 grid gap-6">
+        {LIFTS.map((lift) => {
+          const startWeight = startingWeights[lift.key];
+          const state = { workingWeightKg: startWeight, schemeIndex: 0, consecutiveFailures: 0 };
+          const warmup = generateHepburnWarmup(startWeight, HEPBURN_SETTINGS);
+          const workingSets = planHepburnLift(state);
+
+          return (
+            <div key={lift.key} className="border-2 border-white/15 p-5">
+              <div className="flex items-baseline justify-between">
+                <h3 className="font-display text-lg font-semibold">{LIFT_LABEL_BG[lift.key]}</h3>
+                <span className="text-sm text-chalkDim">
+                  +{DEFAULT_HEPBURN_INCREMENTS_KG[lift.key as HepburnLift]} kg след 8×3
+                </span>
+              </div>
+
+              <p className="mt-3 text-xs uppercase tracking-widest text-chalkDim">Загряване</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {warmup.map((w, i) => (
+                  <span key={i} className="border border-white/10 px-3 py-1 text-sm text-chalkDim">
+                    {w.weightKg} kg × {w.reps}
+                  </span>
+                ))}
+              </div>
+
+              <p className="mt-4 text-xs uppercase tracking-widest text-chalkDim">
+                Работни серии (8×2 — {startWeight} kg)
+              </p>
+              <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-8">
+                {workingSets.map((set, i) => (
+                  <div key={i} className="border border-white/10 p-2 text-center">
+                    <div className="font-display text-sm font-bold text-steelLight">{set.weightKg}</div>
+                    <div className="text-xs text-chalkDim">×{set.reps}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
