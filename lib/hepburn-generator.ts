@@ -1,8 +1,9 @@
 // =====================================================================
 //  HEPBURN POWER ROUTINE A — ГЕНЕРАТОР
 //
-//  Прогресия по схема на повторенията, не по тежест на всяка тренировка:
-//   8x2 → 1x3+7x2 → 2x3+6x2 → ... → 8x3 → +тежест, връщане на 8x2
+//  Прогресия по схема на повторенията, СЕДМИЧНА (не на всяка тренировка):
+//   1x3+7x2 → 2x3+6x2 → ... → 8x3 → +тежест, връщане на 1x3+7x2
+//   (класическото 8x2 не е част от реалната прогресия — потвърдено)
 //
 //  Работи ПЕР УПРАЖНЕНИЕ (клек / лежанка / мъртва тяга / преса) —
 //  композицията коя тренировка кои упражнения включва се решава на
@@ -29,7 +30,7 @@ export const DEFAULT_HEPBURN_INCREMENTS_KG: Record<HepburnLift, number> = {
 
 export interface HepburnLiftState {
   workingWeightKg: number;
-  schemeIndex: number;          // 0 = 8x2 ... 8 = 8x3
+  schemeIndex: number;          // 1 = 1x3+7x2 ... 8 = 8x3 (0=8x2 не се използва в реалната прогресия)
   consecutiveFailures: number;
 }
 
@@ -81,8 +82,17 @@ export function generateHepburnWarmup(
 }
 
 // ---------------------------------------------------------------------
-// Планиране на работните серии за текущото състояние
+// Начално състояние
+//   ВАЖНО: прогресията тръгва от 1×3+7×2 (schemeIndex = 1), НЕ от чисто
+//   8×2 (schemeIndex = 0) — потвърдено от потребителя. Прогресията е
+//   СЕДМИЧНА: една и съща схема се повтаря през цялата седмица (при
+//   класическото разписание — 2 пъти седмично на движение), и напредва
+//   само веднъж, след успешно приключена седмица, не след всяка сесия.
 // ---------------------------------------------------------------------
+
+export function initHepburnLiftState(workingWeightKg: number): HepburnLiftState {
+  return { workingWeightKg, schemeIndex: 1, consecutiveFailures: 0 };
+}
 
 export function planHepburnLift(state: HepburnLiftState): HepburnSetPlan[] {
   return schemeForIndex(state.schemeIndex).map((s) => ({
@@ -120,7 +130,7 @@ export function applyHepburnResult(
           workingWeightKg:
             Math.round((state.workingWeightKg + weightIncrementKg) / settings.roundingIncrementKg) *
             settings.roundingIncrementKg,
-          schemeIndex: 0,
+          schemeIndex: 1,
           consecutiveFailures: 0,
         },
         needsUserDecision: false,
