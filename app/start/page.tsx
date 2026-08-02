@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
+import { createFirstStartingStrengthWorkout } from "@/lib/workout-engine";
 
 type Step = "loading" | "auth" | "profile" | "saving" | "done" | "error";
 type AuthMode = "signup" | "login";
@@ -47,6 +48,7 @@ function StartPageInner() {
     deadlift: searchParams.get("deadlift") ?? "",
     overhead_press: searchParams.get("press") ?? "",
   });
+  const [planReady, setPlanReady] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -130,6 +132,7 @@ function StartPageInner() {
       }
 
       // 4. намери избраната програма и създай генериран план
+      let firstWorkoutCreated = false;
       if (programSlug) {
         const { data: program } = await supabase
           .from("programs")
@@ -138,20 +141,41 @@ function StartPageInner() {
           .single();
 
         if (program) {
-          await supabase.from("generated_plans").insert({
-            user_id: userId,
-            program_id: program.id,
-            start_date: new Date().toISOString().slice(0, 10),
-            settings: {
-              progression_style: "standard",
-              rounding_increment_kg: plateIncrement,
-              amrap_enabled: true,
-            },
-          });
+          const startDate = new Date().toISOString().slice(0, 10);
+          const { data: plan } = await supabase
+            .from("generated_plans")
+            .insert({
+              user_id: userId,
+              program_id: program.id,
+              start_date: startDate,
+              settings: {
+                progression_style: "standard",
+                rounding_increment_kg: plateIncrement,
+                amrap_enabled: true,
+              },
+            })
+            .select()
+            .single();
+
+          if (plan && programSlug === "starting-strength") {
+            await createFirstStartingStrengthWorkout(
+              supabase,
+              plan.id,
+              {
+                squat: Number(maxes.squat) || 40,
+                bench_press: Number(maxes.bench_press) || 30,
+                deadlift: Number(maxes.deadlift) || 50,
+                overhead_press: Number(maxes.overhead_press) || 20,
+              },
+              startDate
+            );
+            firstWorkoutCreated = true;
+          }
         }
       }
 
       setStep("done");
+      setPlanReady(firstWorkoutCreated);
     } catch (err) {
       setErrorMessage("Нещо се обърка при запазването. Опитай пак.");
       setStep("error");
@@ -330,10 +354,24 @@ function StartPageInner() {
         {step === "done" && (
           <div className="py-12 text-center">
             <h1 className="font-display text-3xl font-semibold text-amber">Готово!</h1>
-            <p className="mt-4 text-chalkDim">
-              Профилът и планът ти са запазени. Календарният екран е следващото, което
-              строим — засега данните ти вече чакат готови в базата.
-            </p>
+            {planReady ? (
+              <>
+                <p className="mt-4 text-chalkDim">
+                  Първата ти тренировка вече е готова, изчислена от твоите данни.
+                </p>
+                <a
+                  href="/today"
+                  className="mt-6 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
+                >
+                  Към днешната тренировка →
+                </a>
+              </>
+            ) : (
+              <p className="mt-4 text-chalkDim">
+                Профилът и планът ти са запазени. Календарният екран за тази програма е в
+                процес на изграждане — засега данните ти вече чакат готови в базата.
+              </p>
+            )}
           </div>
         )}
 
