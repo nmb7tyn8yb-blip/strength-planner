@@ -167,11 +167,7 @@ export default function OneRepMaxCalculatorPage() {
               {estimate.average} <span className="text-2xl text-chalkDim">kg</span>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-4 text-sm text-chalkDim">
-              <span>Epley: {estimate.epley} kg</span>
-              <span>Brzycki: {estimate.brzycki} kg</span>
-              <span>Lombardi: {estimate.lombardi} kg</span>
-            </div>
+
 
             {level && (
               <div className="mt-8 border-2 border-steel p-6">
