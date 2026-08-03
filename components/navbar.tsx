@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { href: "/programs", label: "Програми" },
   { href: "/1rm-calculator", label: "1RM Калкулатор" },
   { href: "/quiz", label: "Въпросник" },
+  { href: "/dashboard", label: "Табло" },
 ];
 
 export default function Navbar() {
