@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
-import { createFirstStartingStrengthWorkout, createFirstWendlerWorkout, createFirstHepburnWorkout } from "@/lib/workout-engine";
+import { createFirstStartingStrengthWorkout, createFirstWendlerWorkout, createFirstHepburnWorkout, createFirstTexasWorkout } from "@/lib/workout-engine";
 
 type Step = "loading" | "auth" | "profile" | "saving" | "done" | "error";
 type AuthMode = "signup" | "login";
@@ -196,6 +196,21 @@ function StartPageInner() {
                 bench_press: Number(maxes.bench_press) || 40,
                 deadlift: Number(maxes.deadlift) || 80,
                 overhead_press: Number(maxes.overhead_press) || 30,
+              },
+              startDate
+            );
+            firstWorkoutCreated = true;
+          }
+
+          if (plan && programSlug === "texas-method") {
+            await createFirstTexasWorkout(
+              supabase,
+              plan.id,
+              {
+                squat: Number(maxes.squat) || 80,
+                benchPress: Number(maxes.bench_press) || 60,
+                overheadPress: Number(maxes.overhead_press) || 40,
+                deadlift: Number(maxes.deadlift) || 100,
               },
               startDate
             );
