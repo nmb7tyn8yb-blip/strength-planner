@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
 import { getCurrentWorkingWeights } from "@/lib/workout-engine";
 import LoadingScreen from "@/components/loading-screen";
+import EmptyState from "@/components/empty-state";
 
 const LIFT_LABEL: Record<string, string> = {
   squat: "Клек",
@@ -111,18 +112,12 @@ export default function DashboardPage() {
 
   if (phase === "no-plan") {
     return (
-      <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
-        <div className="mx-auto max-w-xl text-center">
-          <h1 className="font-display text-2xl font-semibold">Нямаш активен план</h1>
-          <p className="mt-3 text-chalkDim">Избери програма, за да започнеш.</p>
-          <Link
-            href="/programs"
-            className="mt-6 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
-          >
-            Разгледай програмите →
-          </Link>
-        </div>
-      </main>
+      <EmptyState
+        title="Нямаш активен план"
+        description="Избери програма от каталога — калкулаторът работи веднага, без регистрация, ако само искаш да провериш числата."
+        ctaHref="/programs"
+        ctaLabel="Разгледай програмите"
+      />
     );
   }
 
