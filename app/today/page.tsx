@@ -31,7 +31,7 @@ const FAILURE_REASONS: { value: string; label: string }[] = [
 interface WorkoutSetRow {
   id: string;
   exercise_id: string;
-  set_type: "warmup" | "working";
+  set_type: "warmup" | "working" | "amrap";
   planned_weight: number;
   planned_reps: number;
   order_index: number;
