@@ -20,6 +20,7 @@ import {
 import {
   initWendlerState,
   planWendlerLift,
+  planFSLSets,
   advanceWendlerWeek,
   type WendlerState,
   type WendlerSettings,
@@ -197,7 +198,7 @@ async function insertWendlerSession(
       session_name: `Цикъл ${cycleNumber}, седмица ${weekNumber} — ${EXERCISE_NAME_BY_SLUG[lift]}`,
       status: "planned",
       is_deload: weekNumber === 4,
-      estimated_duration_minutes: 40,
+      estimated_duration_minutes: weekNumber === 4 ? 40 : 55,
     })
     .select()
     .single();
@@ -233,7 +234,7 @@ export async function createFirstWendlerWorkout(
   const state: WendlerScheduleState = { ...baseState, nextLiftIndex: 0 };
 
   const lift = WENDLER_LIFT_ORDER[0];
-  const sets = planWendlerLift(lift, baseState, settings);
+  const sets = [...planWendlerLift(lift, baseState, settings), ...planFSLSets(lift, baseState, settings)];
   const workoutRow = await insertWendlerSession(
     supabase,
     generatedPlanId,
@@ -279,7 +280,7 @@ export async function completeWendlerWorkout(
   const newState: WendlerScheduleState = { ...newBaseState, nextLiftIndex: newLiftIndex };
 
   const nextLift = WENDLER_LIFT_ORDER[newLiftIndex];
-  const nextSets = planWendlerLift(nextLift, newBaseState, settings);
+  const nextSets = [...planWendlerLift(nextLift, newBaseState, settings), ...planFSLSets(nextLift, newBaseState, settings)];
   const nextWorkoutRow = await insertWendlerSession(
     supabase,
     generatedPlanId,
