@@ -59,7 +59,7 @@ async function getExerciseIdMap(supabase: SupabaseClient): Promise<Record<LiftSl
 
   const map = {} as Record<LiftSlug, string>;
   (Object.keys(EXERCISE_NAME_BY_SLUG) as LiftSlug[]).forEach((slug) => {
-    const row = data.find((ex) => ex.name === EXERCISE_NAME_BY_SLUG[slug]);
+    const row = data.find((ex: { id: string; name: string }) => ex.name === EXERCISE_NAME_BY_SLUG[slug]);
     if (row) map[slug] = row.id;
   });
   return map;
@@ -966,33 +966,7 @@ export interface JuggernautScheduleState {
 // КЛАСИЧЕСКИ ВАРИАНТ
 // ---------------------------------------------------------------------
 
-async function insertJuggernautClassicSession(
-  supabase: SupabaseClient,
-  generatedPlanId: string,
-  lift: JuggernautLift,
-  state: JuggernautScheduleState,
-  scheduledDate: string
-) {
-  const wave = WAVE_NAMES[state.waveIndex];
-  const sets = planJuggernautWeek(lift, { waveIndex: state.waveIndex, weekNumber: state.weekNumber as any, tmKg: state.tmKg }, DEFAULT_JUGGERNAUT_CLASSIC_SETTINGS);
-  const exerciseIdMap = await getExerciseIdMap(supabase);
-
-  const { data: workoutRow, error: workoutError } = await supabase
-    .from("scheduled_workouts")
-    .insert({
-      generated_plan_id: generatedPlanId,
-      scheduled_date: scheduledDate,
-      session_name: `Вълна ${wave}, седмица ${state.weekNumber} — ${EXERCISE_NAME_BY_SLUG[lift]}`,
-      status: "planned",
-      is_deload: state.weekNumber === 4,
-      estimated_duration_minutes: 50,
-    })
-    .select()
-    .single();
-
-  if (workoutError || !workoutRow) throw new Error("Не успяхме да създадем тренировката.");
-
-  // Помощни упражнения за Juggernaut — ОРИГИНАЛЪТ не дава точна схема тук,
+// Помощни упражнения за Juggernaut — ОРИГИНАЛЪТ не дава точна схема тук,
 // това е разумна добавка на приложението (не буквално правило): push ден
 // (бенч/преса) получава дърпащо движение за баланс, squat/deadlift ден
 // получава леко упражнение за раменен пояс, което не преуморява вече
@@ -1029,7 +1003,33 @@ async function insertJuggernautAccessory(
   if (error) throw new Error("Не успяхме да запазим помощните упражнения.");
 }
 
-const setsForDb = sets.map((s, i) => ({
+async function insertJuggernautClassicSession(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  lift: JuggernautLift,
+  state: JuggernautScheduleState,
+  scheduledDate: string
+) {
+  const wave = WAVE_NAMES[state.waveIndex];
+  const sets = planJuggernautWeek(lift, { waveIndex: state.waveIndex, weekNumber: state.weekNumber as any, tmKg: state.tmKg }, DEFAULT_JUGGERNAUT_CLASSIC_SETTINGS);
+  const exerciseIdMap = await getExerciseIdMap(supabase);
+
+  const { data: workoutRow, error: workoutError } = await supabase
+    .from("scheduled_workouts")
+    .insert({
+      generated_plan_id: generatedPlanId,
+      scheduled_date: scheduledDate,
+      session_name: `Вълна ${wave}, седмица ${state.weekNumber} — ${EXERCISE_NAME_BY_SLUG[lift]}`,
+      status: "planned",
+      is_deload: state.weekNumber === 4,
+      estimated_duration_minutes: 50,
+    })
+    .select()
+    .single();
+
+  if (workoutError || !workoutRow) throw new Error("Не успяхме да създадем тренировката.");
+
+  const setsForDb = sets.map((s, i) => ({
     scheduled_workout_id: workoutRow.id,
     exercise_id: exerciseIdMap[lift],
     order_index: i,
