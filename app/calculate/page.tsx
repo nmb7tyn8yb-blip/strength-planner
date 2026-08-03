@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import {
   calculateTrainingMax,
   planWendlerLift,
+  planFSLSets,
   type WendlerLift,
   type WendlerSettings,
 } from "@/lib/wendler-531-generator";
@@ -298,17 +299,21 @@ function Wendler531Results({ numericMaxes }: { numericMaxes: Record<WendlerLift,
     <div className="mt-10">
       <h2 className="font-display text-xl font-semibold">Седмица 1 — твоят план</h2>
       <p className="mt-1 text-sm text-chalkDim">
-        Тренировъчен максимум = 90% от въведения 1RM. Последната серия е AMRAP.
+        Тренировъчен максимум = 90% от въведения 1RM. Последната серия е AMRAP, следвана
+        от FSL 5×5 — помощен обем, изрично препоръчан от Wendler.
       </p>
 
       <div className="mt-6 grid gap-6">
         {LIFTS.map((lift) => {
+          const state = {
+            cycleNumber: 1,
+            weekNumber: 1 as const,
+            trainingMaxKg: { ...numericMaxes, [lift.key]: 0 },
+          };
           const tm = calculateTrainingMax(numericMaxes[lift.key], WENDLER_SETTINGS, WENDLER_SETTINGS.roundingIncrementKg);
-          const sets = planWendlerLift(
-            lift.key,
-            { cycleNumber: 1, weekNumber: 1, trainingMaxKg: { ...numericMaxes, [lift.key]: tm } },
-            WENDLER_SETTINGS
-          );
+          state.trainingMaxKg[lift.key] = tm;
+          const sets = planWendlerLift(lift.key, state, WENDLER_SETTINGS);
+          const fslSets = planFSLSets(lift.key, state, WENDLER_SETTINGS);
 
           return (
             <div key={lift.key} className="border-2 border-white/15 p-5">
@@ -330,6 +335,20 @@ function Wendler531Results({ numericMaxes }: { numericMaxes: Record<WendlerLift,
                   </div>
                 ))}
               </div>
+
+              {fslSets.length > 0 && (
+                <>
+                  <p className="mt-4 text-xs uppercase tracking-widest text-chalkDim">FSL 5×5</p>
+                  <div className="mt-2 grid grid-cols-5 gap-2">
+                    {fslSets.map((set, i) => (
+                      <div key={i} className="border border-white/10 p-2 text-center">
+                        <div className="font-display text-sm font-bold text-steelLight">{set.weightKg}</div>
+                        <div className="text-xs text-chalkDim">×{set.reps}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           );
         })}
