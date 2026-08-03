@@ -60,7 +60,7 @@ export default function DashboardPage() {
 
     const { data: plans } = await supabase
       .from("generated_plans")
-      .select("*, programs(name, slug)")
+      .select("*, programs(name, slug), custom_programs(name)")
       .eq("user_id", userId)
       .eq("status", "active")
       .order("created_at", { ascending: false })
@@ -72,10 +72,16 @@ export default function DashboardPage() {
       return;
     }
 
-    setProgramName(plan.programs?.name ?? "");
-    setProgramSlug(plan.programs?.slug ?? "");
+    if (plan.custom_program_id) {
+      setProgramName(plan.custom_programs?.name ?? "Моята програма");
+      setProgramSlug("");
+      setCurrentWeights(null);
+    } else {
+      setProgramName(plan.programs?.name ?? "");
+      setProgramSlug(plan.programs?.slug ?? "");
+      setCurrentWeights(getCurrentWorkingWeights(plan.programs?.slug, plan.settings));
+    }
     setStartDate(plan.start_date);
-    setCurrentWeights(getCurrentWorkingWeights(plan.programs?.slug, plan.settings));
 
     const { data: workoutRows } = await supabase
       .from("scheduled_workouts")
