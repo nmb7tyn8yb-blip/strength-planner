@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
 import {
   completeStartingStrengthWorkout,
+  completeWendlerWorkout,
   nextTrainingDate,
 } from "@/lib/workout-engine";
 import type { SessionResultInput, LiftSlug } from "@/lib/starting-strength-generator";
@@ -45,6 +46,7 @@ export default function TodayPage() {
 
   const [plan, setPlan] = useState<any>(null);
   const [programName, setProgramName] = useState("");
+  const [programSlug, setProgramSlug] = useState("");
   const [workout, setWorkout] = useState<any>(null);
   const [sets, setSets] = useState<WorkoutSetRow[]>([]);
   const [actualReps, setActualReps] = useState<Record<string, number>>({});
@@ -79,8 +81,9 @@ export default function TodayPage() {
     }
     setPlan(activePlan);
     setProgramName(activePlan.programs?.name ?? "");
+    setProgramSlug(activePlan.programs?.slug ?? "");
 
-    if (activePlan.programs?.slug !== "starting-strength") {
+    if (!["starting-strength", "531"].includes(activePlan.programs?.slug)) {
       setPhase("unsupported");
       return;
     }
@@ -127,6 +130,11 @@ export default function TodayPage() {
   }
 
   async function handleFinishWorkout() {
+    if (programSlug === "531") {
+      await handleFinishWendler();
+      return;
+    }
+
     const results = computeResults();
     const anyFailure = results.some((r) => !r.allPrescribedSetsCompleted);
 
@@ -169,6 +177,39 @@ export default function TodayPage() {
     }
   }
 
+  async function handleFinishWendler() {
+    setPhase("submitting");
+    try {
+      const nonAmrapSets = sets.filter((s) => s.set_type === "working");
+      const allNonAmrapCompleted = nonAmrapSets.every((s) => (actualReps[s.id] ?? 0) >= s.planned_reps);
+
+      const completedRows = sets.map((s) => ({
+        workout_set_id: s.id,
+        actual_weight: s.planned_weight,
+        actual_reps: actualReps[s.id] ?? 0,
+      }));
+      if (completedRows.length > 0) {
+        await supabase.from("completed_sets").insert(completedRows);
+      }
+
+      const next = nextTrainingDate(workout.scheduled_date, 2);
+      await completeWendlerWorkout(
+        supabase,
+        plan.id,
+        workout.id,
+        plan.settings.wendler_state,
+        plan.settings.wendler_settings,
+        allNonAmrapCompleted,
+        next
+      );
+      setNextDate(next);
+      setPhase("done");
+    } catch (err) {
+      setErrorMessage("Нещо се обърка при запазването. Опитай пак.");
+      setPhase("error");
+    }
+  }
+
   if (phase === "loading") {
     return <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">Зареждане…</main>;
   }
@@ -198,8 +239,8 @@ export default function TodayPage() {
         <div className="mx-auto max-w-xl text-center">
           <h1 className="font-display text-2xl font-semibold">{programName}</h1>
           <p className="mt-3 text-chalkDim">
-            Този екран засега поддържа само Starting Strength — твоята програма е
-            следваща на опашката за добавяне.
+            Този екран засега поддържа Starting Strength и Wendler 5/3/1 — твоята
+            програма е следваща на опашката за добавяне.
           </p>
         </div>
       </main>
@@ -248,11 +289,12 @@ export default function TodayPage() {
                 <p className="mt-4 text-xs uppercase tracking-widest text-chalkDim">Работни серии</p>
                 <div className="mt-2 grid gap-2">
                   {exerciseSets
-                    .filter((s) => s.set_type === "working")
+                    .filter((s) => s.set_type !== "warmup")
                     .map((s) => (
                       <div key={s.id} className="flex items-center justify-between border border-white/10 px-4 py-3">
                         <span className="text-chalk">
-                          {s.planned_weight} kg × {s.planned_reps} (план)
+                          {s.planned_weight} kg × {s.planned_reps}
+                          {s.set_type === "amrap" ? "+ (AMRAP)" : ""} (план)
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-chalkDim">Направени:</span>
