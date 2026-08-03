@@ -59,8 +59,10 @@ function OneRepMaxCalculatorInner() {
 
   function buildReturnUrl(): string | null {
     if (!returnTo || estimate.average <= 0) return null;
-    const separator = returnTo.includes("?") ? "&" : "?";
-    return `${returnTo}${separator}${RETURN_PARAM_BY_LIFT[lift]}=${estimate.average}`;
+    const [path, query] = returnTo.split("?");
+    const params = new URLSearchParams(query ?? "");
+    params.set(RETURN_PARAM_BY_LIFT[lift], String(estimate.average));
+    return `${path}?${params.toString()}`;
   }
 
   function handleSubmit(e: React.FormEvent) {
