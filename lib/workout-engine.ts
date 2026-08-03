@@ -17,6 +17,14 @@ import {
   type SessionResultInput,
   type LiftSlug,
 } from "./starting-strength-generator";
+import {
+  initWendlerState,
+  planWendlerLift,
+  advanceWendlerWeek,
+  type WendlerState,
+  type WendlerSettings,
+  type WendlerLift,
+} from "./wendler-531-generator";
 
 const EXERCISE_NAME_BY_SLUG: Record<LiftSlug, string> = {
   squat: "Клек",
@@ -145,4 +153,147 @@ export function nextTrainingDate(fromDateStr: string, daysAhead: number = 2): st
   const d = new Date(fromDateStr);
   d.setDate(d.getDate() + daysAhead);
   return d.toISOString().slice(0, 10);
+}
+
+// =====================================================================
+//  WENDLER 5/3/1 — adapter
+//
+//  Ротация: Военна преса → Мъртва тяга → Лежанка → Клек (по разписанието
+//  от оригинала: Пон/Вт/Чет/Пет). weekNumber е ОБЩ за четирите — напредва
+//  само след пълен кръг от всичките 4 lift-а, не след всяка сесия.
+//  Тренировъчният максимум се качва фиксирано след седмица 4 (deload),
+//  еднакво за всички lift-ове — не зависи от AMRAP резултата в тази версия.
+// =====================================================================
+
+export const WENDLER_LIFT_ORDER: WendlerLift[] = ["overhead_press", "deadlift", "bench_press", "squat"];
+
+const DEFAULT_WENDLER_SETTINGS: WendlerSettings = {
+  roundingIncrementKg: 2.5,
+  tmIncreaseUpperKg: 2.5,
+  tmIncreaseLowerKg: 5,
+  trainingMaxPercentOf1RM: 0.9,
+};
+
+export interface WendlerScheduleState extends WendlerState {
+  nextLiftIndex: number; // 0-3, индекс в WENDLER_LIFT_ORDER
+}
+
+async function insertWendlerSession(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  lift: WendlerLift,
+  weekNumber: number,
+  cycleNumber: number,
+  sets: ReturnType<typeof planWendlerLift>,
+  scheduledDate: string
+) {
+  const exerciseIdMap = await getExerciseIdMap(supabase);
+
+  const { data: workoutRow, error: workoutError } = await supabase
+    .from("scheduled_workouts")
+    .insert({
+      generated_plan_id: generatedPlanId,
+      scheduled_date: scheduledDate,
+      session_name: `Цикъл ${cycleNumber}, седмица ${weekNumber} — ${EXERCISE_NAME_BY_SLUG[lift]}`,
+      status: "planned",
+      is_deload: weekNumber === 4,
+      estimated_duration_minutes: 40,
+    })
+    .select()
+    .single();
+
+  if (workoutError || !workoutRow) throw new Error("Не успяхме да създадем тренировката.");
+
+  const setsForDb = sets.map((s, i) => ({
+    scheduled_workout_id: workoutRow.id,
+    exercise_id: exerciseIdMap[lift],
+    order_index: i,
+    set_number: i + 1,
+    set_type: s.isAmrap ? "amrap" : "working",
+    planned_weight: s.weightKg,
+    planned_reps: s.reps,
+    planned_rest_seconds: 180,
+  }));
+
+  const { error: setsError } = await supabase.from("workout_sets").insert(setsForDb);
+  if (setsError) throw new Error("Не успяхме да запазим сериите.");
+
+  return workoutRow;
+}
+
+/** Извиква се веднъж, при създаване на плана (в /start). */
+export async function createFirstWendlerWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  oneRepMaxesKg: Record<WendlerLift, number>,
+  scheduledDate: string
+) {
+  const settings = DEFAULT_WENDLER_SETTINGS;
+  const baseState = initWendlerState(oneRepMaxesKg, settings);
+  const state: WendlerScheduleState = { ...baseState, nextLiftIndex: 0 };
+
+  const lift = WENDLER_LIFT_ORDER[0];
+  const sets = planWendlerLift(lift, baseState, settings);
+  const workoutRow = await insertWendlerSession(
+    supabase,
+    generatedPlanId,
+    lift,
+    state.weekNumber,
+    state.cycleNumber,
+    sets,
+    scheduledDate
+  );
+
+  await supabase
+    .from("generated_plans")
+    .update({ settings: { wendler_state: state, wendler_settings: settings } })
+    .eq("id", generatedPlanId);
+
+  return workoutRow;
+}
+
+/** Извиква се след като потребителят приключи сесия от /today. */
+export async function completeWendlerWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  scheduledWorkoutId: string,
+  state: WendlerScheduleState,
+  settings: WendlerSettings,
+  allNonAmrapSetsCompleted: boolean,
+  nextScheduledDate: string
+) {
+  await supabase
+    .from("scheduled_workouts")
+    .update({ status: allNonAmrapSetsCompleted ? "completed" : "partial" })
+    .eq("id", scheduledWorkoutId);
+
+  const newLiftIndex = (state.nextLiftIndex + 1) % WENDLER_LIFT_ORDER.length;
+  const baseState: WendlerState = {
+    cycleNumber: state.cycleNumber,
+    weekNumber: state.weekNumber,
+    trainingMaxKg: state.trainingMaxKg,
+  };
+
+  // напредва седмицата само след пълен кръг (всичките 4 lift-а изиграни)
+  const newBaseState = newLiftIndex === 0 ? advanceWendlerWeek(baseState, settings) : baseState;
+  const newState: WendlerScheduleState = { ...newBaseState, nextLiftIndex: newLiftIndex };
+
+  const nextLift = WENDLER_LIFT_ORDER[newLiftIndex];
+  const nextSets = planWendlerLift(nextLift, newBaseState, settings);
+  const nextWorkoutRow = await insertWendlerSession(
+    supabase,
+    generatedPlanId,
+    nextLift,
+    newBaseState.weekNumber,
+    newBaseState.cycleNumber,
+    nextSets,
+    nextScheduledDate
+  );
+
+  await supabase
+    .from("generated_plans")
+    .update({ settings: { wendler_state: newState, wendler_settings: settings } })
+    .eq("id", generatedPlanId);
+
+  return { newState, nextWorkoutRow };
 }
