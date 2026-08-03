@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
+import LoadingScreen from "@/components/loading-screen";
 import {
   completeStartingStrengthWorkout,
   completeWendlerWorkout,
@@ -421,7 +422,7 @@ export default function TodayPage() {
   }
 
   if (phase === "loading") {
-    return <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">Зареждане…</main>;
+    return <LoadingScreen label="Зареждаме днешната ти тренировка…" />;
   }
 
   if (phase === "no-plan") {
@@ -581,7 +582,12 @@ export default function TodayPage() {
           </div>
         )}
 
-        {phase === "submitting" && <p className="mt-8 text-chalkDim">Запазваме…</p>}
+        {phase === "submitting" && (
+          <div className="mt-8 flex items-center gap-3 text-chalkDim">
+            <div className="h-5 w-5 animate-spin border-2 border-amber border-t-transparent" />
+            Запазваме…
+          </div>
+        )}
 
         {phase === "error" && <p className="mt-8 text-rust">{errorMessage}</p>}
       </div>
