@@ -10,6 +10,8 @@ import {
   hepburnDayOffset,
   completeTexasWorkout,
   texasDayOffset,
+  completeSurovetskyWorkout,
+  surovetskyDayOffset,
   nextTrainingDate,
 } from "@/lib/workout-engine";
 import type { SessionResultInput, LiftSlug } from "@/lib/starting-strength-generator";
@@ -42,7 +44,7 @@ interface WorkoutSetRow {
   exercises: { name: string };
 }
 
-type Phase = "loading" | "no-plan" | "unsupported" | "workout" | "failure-reason" | "submitting" | "done" | "error";
+type Phase = "loading" | "no-plan" | "unsupported" | "workout" | "failure-reason" | "confirm-max" | "submitting" | "done" | "error";
 
 export default function TodayPage() {
   const [phase, setPhase] = useState<Phase>("loading");
@@ -55,6 +57,7 @@ export default function TodayPage() {
   const [sets, setSets] = useState<WorkoutSetRow[]>([]);
   const [actualReps, setActualReps] = useState<Record<string, number>>({});
   const [failureReason, setFailureReason] = useState("weight_too_high");
+  const [confirmedMax, setConfirmedMax] = useState("");
   const [nextDate, setNextDate] = useState<string | null>(null);
 
   useEffect(() => {
@@ -87,7 +90,11 @@ export default function TodayPage() {
     setProgramName(activePlan.programs?.name ?? "");
     setProgramSlug(activePlan.programs?.slug ?? "");
 
-    if (!["starting-strength", "531", "hepburn-a", "texas-method"].includes(activePlan.programs?.slug)) {
+    if (
+      !["starting-strength", "531", "hepburn-a", "texas-method", "surovetsky-1", "surovetsky-2"].includes(
+        activePlan.programs?.slug
+      )
+    ) {
       setPhase("unsupported");
       return;
     }
@@ -116,6 +123,8 @@ export default function TodayPage() {
     const setsData = (workoutSets as unknown as WorkoutSetRow[]) ?? [];
     setSets(setsData);
     setActualReps(Object.fromEntries(setsData.map((s) => [s.id, s.planned_reps])));
+    const heaviestSet = setsData.reduce((max, s) => (s.planned_weight > max ? s.planned_weight : max), 0);
+    setConfirmedMax(String(heaviestSet));
     setPhase("workout");
   }
 
@@ -136,6 +145,11 @@ export default function TodayPage() {
   async function handleFinishWorkout() {
     if (programSlug === "531") {
       await handleFinishWendler();
+      return;
+    }
+
+    if (programSlug === "surovetsky-1" || programSlug === "surovetsky-2") {
+      await handleFinishSurovetsky();
       return;
     }
 
@@ -182,6 +196,44 @@ export default function TodayPage() {
         plan.settings.ss_settings,
         finalResults,
         next
+      );
+      setNextDate(next);
+      setPhase("done");
+    } catch (err) {
+      setErrorMessage("Нещо се обърка при запазването. Опитай пак.");
+      setPhase("error");
+    }
+  }
+
+  async function handleFinishSurovetsky() {
+    if (workout.is_max_test && phase !== "confirm-max") {
+      setPhase("confirm-max");
+      return;
+    }
+
+    setPhase("submitting");
+    try {
+      const completedRows = sets
+        .filter((s) => s.set_type !== "warmup")
+        .map((s) => ({
+          workout_set_id: s.id,
+          actual_weight: s.planned_weight,
+          actual_reps: actualReps[s.id] ?? 0,
+        }));
+      if (completedRows.length > 0) {
+        await supabase.from("completed_sets").insert(completedRows);
+      }
+
+      const offset = surovetskyDayOffset(plan.settings.surovetsky_state.sessionIndexInCycle);
+      const next = nextTrainingDate(workout.scheduled_date, offset);
+
+      await completeSurovetskyWorkout(
+        supabase,
+        plan.id,
+        workout.id,
+        plan.settings.surovetsky_state,
+        next,
+        workout.is_max_test ? Number(confirmedMax) : undefined
       );
       setNextDate(next);
       setPhase("done");
@@ -343,8 +395,8 @@ export default function TodayPage() {
         <div className="mx-auto max-w-xl text-center">
           <h1 className="font-display text-2xl font-semibold">{programName}</h1>
           <p className="mt-3 text-chalkDim">
-            Този екран засега поддържа Starting Strength, Wendler 5/3/1, Hepburn и Texas
-            Method — твоята програма е следваща на опашката за добавяне.
+            Този екран засега поддържа Starting Strength, Wendler 5/3/1, Hepburn, Texas
+            Method и Суровецкий — твоята програма е следваща на опашката за добавяне.
           </p>
         </div>
       </main>
@@ -453,6 +505,32 @@ export default function TodayPage() {
               className="mt-4 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
             >
               Запази и продължи →
+            </button>
+          </div>
+        )}
+
+        {phase === "confirm-max" && (
+          <div className="mt-8 border-2 border-amber p-6">
+            <h2 className="font-display text-lg font-semibold text-amber">
+              Каква тежест реално вдигна на теста?
+            </h2>
+            <p className="mt-2 text-sm text-chalkDim">
+              Това е "проходката" — истинският опит за нов максимум, не планираната
+              тежест. Въведи реално постигнатото, дори ако е различно от плана.
+            </p>
+            <input
+              type="number"
+              min={0}
+              step={0.5}
+              value={confirmedMax}
+              onChange={(e) => setConfirmedMax(e.target.value)}
+              className="mt-4 w-full border-2 border-white/15 bg-transparent px-4 py-3 text-chalk focus:border-amber"
+            />
+            <button
+              onClick={handleFinishSurovetsky}
+              className="mt-4 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
+            >
+              Запази новия максимум →
             </button>
           </div>
         )}
