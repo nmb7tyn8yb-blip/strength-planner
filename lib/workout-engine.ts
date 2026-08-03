@@ -302,9 +302,9 @@ export async function completeWendlerWorkout(
 //  HEPBURN POWER ROUTINE A — adapter
 //
 //  Класическо разписание: Пон/Чет = Клек+Лежанка, Вт/Пет = Тяга+Преса.
-//  Прогресията е СЕДМИЧНА — всяко вдигане се тренира 2 пъти на същата
-//  схема, преди да напредне. Затова всеки lift пази собствен брояч
-//  "sessionsAtCurrentScheme"; на 2-рата успешна сесия схемата напредва.
+//  Схемата напредва на ВСЯКА следваща успешна тренировка (1×3+7×2 →
+//  2×3+6×2 → ... → 8×3 → +тежест) — независимо кой ден е, не изисква
+//  повторение на същата схема.
 // =====================================================================
 
 import {
@@ -346,27 +346,8 @@ function updateHepburnLiftWeekly(
   lift: HepburnLift,
   settings: HepburnSettings
 ): { newState: HepburnLiftScheduleState; needsUserDecision: boolean } {
-  if (!allSetsCompleted) {
-    const result = applyHepburnSchemeResult(state, false, lift, settings);
-    return {
-      newState: { ...result.newState, sessionsAtCurrentScheme: state.sessionsAtCurrentScheme },
-      needsUserDecision: result.needsUserDecision,
-    };
-  }
-
-  const sessionsDone = state.sessionsAtCurrentScheme + 1;
-  if (sessionsDone < 2) {
-    return { newState: { ...state, sessionsAtCurrentScheme: sessionsDone }, needsUserDecision: false };
-  }
-
-  // втора успешна сесия на тази схема тази седмица → напредва
-  const result = applyHepburnSchemeResult(
-    { workingWeightKg: state.workingWeightKg, schemeIndex: state.schemeIndex, consecutiveFailures: 0 },
-    true,
-    lift,
-    settings
-  );
-  return { newState: { ...result.newState, sessionsAtCurrentScheme: 0 }, needsUserDecision: false };
+  const result = applyHepburnSchemeResult(state, allSetsCompleted, lift, settings);
+  return { newState: { ...result.newState, sessionsAtCurrentScheme: 0 }, needsUserDecision: result.needsUserDecision };
 }
 
 async function insertHepburnSession(
