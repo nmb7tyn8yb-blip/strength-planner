@@ -40,6 +40,14 @@ interface ProgramRow {
   detailed_description: DetailedDescription | null;
 }
 
+const EQUIPMENT_LABEL: Record<string, string> = {
+  щанга: "щанга",
+  дискове: "дискове",
+  "силова рамка": "силова рамка (клетка с предпазни лостове — за самостоятелен клек/лежанка, без партньор)",
+  дъмбели: "дъмбели (за помощни упражнения)",
+  стойка: "силова рамка (клетка с предпазни лостове — за самостоятелен клек/лежанка, без партньор)",
+};
+
 const LEVEL_LABEL: Record<string, string> = {
   beginner: "Начинаещ",
   intermediate: "Средно напреднал",
@@ -165,10 +173,17 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
             <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
               Оборудване
             </h2>
-            <p className="mt-2 text-chalk">
-              {program.required_equipment?.join(", ") ??
-                (p.equipment === "full" ? "Пълна зала" : "Само щанга и дискове")}
-            </p>
+            {program.required_equipment ? (
+              <ul className="mt-2 space-y-1">
+                {program.required_equipment.map((item) => (
+                  <li key={item} className="text-sm leading-relaxed text-chalk">
+                    · {EQUIPMENT_LABEL[item] ?? item}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-chalk">{p.equipment === "full" ? "Пълна зала" : "Само щанга и дискове"}</p>
+            )}
           </div>
 
           <div>
