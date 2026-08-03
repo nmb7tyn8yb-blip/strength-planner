@@ -8,6 +8,8 @@ import {
   completeWendlerWorkout,
   completeHepburnWorkout,
   hepburnDayOffset,
+  completeTexasWorkout,
+  texasDayOffset,
   nextTrainingDate,
 } from "@/lib/workout-engine";
 import type { SessionResultInput, LiftSlug } from "@/lib/starting-strength-generator";
@@ -85,7 +87,7 @@ export default function TodayPage() {
     setProgramName(activePlan.programs?.name ?? "");
     setProgramSlug(activePlan.programs?.slug ?? "");
 
-    if (!["starting-strength", "531", "hepburn-a"].includes(activePlan.programs?.slug)) {
+    if (!["starting-strength", "531", "hepburn-a", "texas-method"].includes(activePlan.programs?.slug)) {
       setPhase("unsupported");
       return;
     }
@@ -150,6 +152,11 @@ export default function TodayPage() {
       return;
     }
 
+    if (programSlug === "texas-method") {
+      await handleFinishTexas();
+      return;
+    }
+
     setPhase("submitting");
     try {
       const finalResults = computeResults();
@@ -174,6 +181,57 @@ export default function TodayPage() {
         plan.settings.ss_state,
         plan.settings.ss_settings,
         finalResults,
+        next
+      );
+      setNextDate(next);
+      setPhase("done");
+    } catch (err) {
+      setErrorMessage("Нещо се обърка при запазването. Опитай пак.");
+      setPhase("error");
+    }
+  }
+
+  async function handleFinishTexas() {
+    setPhase("submitting");
+    try {
+      const finalResults = computeResults();
+      const findResult = (slug: string) => finalResults.find((r) => r.exerciseSlug === slug);
+
+      const squatResult = findResult("squat");
+      const benchResult = findResult("bench_press");
+      const pressResult = findResult("overhead_press");
+      const deadliftResult = findResult("deadlift");
+      const upperResult = benchResult ?? pressResult;
+
+      const findWeight = (slug: string) => {
+        const match = sets.find((s) => EXERCISE_SLUG_BY_NAME[s.exercises.name] === slug);
+        return match?.planned_weight ?? 0;
+      };
+
+      const completedRows = sets.map((s) => ({
+        workout_set_id: s.id,
+        actual_weight: s.planned_weight,
+        actual_reps: actualReps[s.id] ?? 0,
+      }));
+      if (completedRows.length > 0) {
+        await supabase.from("completed_sets").insert(completedRows);
+      }
+
+      const offset = texasDayOffset(plan.settings.texas_state.dayType);
+      const next = nextTrainingDate(workout.scheduled_date, offset);
+
+      await completeTexasWorkout(
+        supabase,
+        plan.id,
+        workout.id,
+        plan.settings.texas_state,
+        plan.settings.texas_settings,
+        {
+          squatAchieved: squatResult?.allPrescribedSetsCompleted ?? true,
+          upperLiftAchieved: upperResult?.allPrescribedSetsCompleted ?? true,
+          deadliftAchieved: deadliftResult ? deadliftResult.allPrescribedSetsCompleted : undefined,
+        },
+        { squat: findWeight("squat"), upperLift: findWeight(benchResult ? "bench_press" : "overhead_press") },
         next
       );
       setNextDate(next);
@@ -285,8 +343,8 @@ export default function TodayPage() {
         <div className="mx-auto max-w-xl text-center">
           <h1 className="font-display text-2xl font-semibold">{programName}</h1>
           <p className="mt-3 text-chalkDim">
-            Този екран засега поддържа Starting Strength, Wendler 5/3/1 и Hepburn —
-            твоята програма е следваща на опашката за добавяне.
+            Този екран засега поддържа Starting Strength, Wendler 5/3/1, Hepburn и Texas
+            Method — твоята програма е следваща на опашката за добавяне.
           </p>
         </div>
       </main>
