@@ -14,16 +14,10 @@ const FEATURED_PROGRAMS = [
   { name: "Hepburn Power Routine A", tag: "Класика", pitch: "Двойки прерастват в тройки — серия по серия до нов максимум." },
 ];
 
-// Стълбицата на Суровецкий — реалните проценти от продукта, не декорация
-const LADDER = [
-  { pct: 30, reps: 8 },
-  { pct: 45, reps: 6 },
-  { pct: 60, reps: 6 },
-  { pct: 70, reps: 5 },
-  { pct: 80, reps: 4 },
-  { pct: 84, reps: 3 },
-  { pct: 88, reps: 3 },
-];
+// Универсален пример за прогресия — тежестта нараства всяка следваща
+// тренировка. Не са данни на конкретна програма, а илюстрация на
+// принципа, общ за всичките 8 програми в каталога.
+const PROGRESSION_EXAMPLE = [40, 42.5, 45, 47.5, 50, 52.5, 55, 57.5];
 
 export default function HomePage() {
   return (
@@ -38,7 +32,7 @@ export default function HomePage() {
             <h1 className="font-display text-5xl font-semibold leading-[1.05] tracking-tight md:text-6xl">
               Тренировъчният ти план,
               <br />
-              изчислен до <span className="text-steelLight">килограма</span>.
+              изчислен до <span className="text-steelLight">килограм</span>.
             </h1>
             <p className="mt-6 max-w-md text-lg leading-relaxed text-chalkDim">
               Избираш система. Въвеждаш максимумите си. Получаваш реален календар —
@@ -61,25 +55,25 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Сигнатурен елемент: стълбицата на Суровецкий като нарастващи "дискове" */}
+          {/* Сигнатурен елемент: тежестта нараства всяка тренировка — общо за всички програми */}
           <div aria-hidden className="relative">
             <div className="flex items-end justify-center gap-2 md:gap-3">
-              {LADDER.map((step, i) => (
-                <div key={step.pct} className="flex flex-col items-center gap-2">
-                  <span className="font-display text-xs text-chalkDim">{step.reps}×</span>
+              {PROGRESSION_EXAMPLE.map((weight, i) => (
+                <div key={i} className="flex flex-col items-center gap-2">
+                  <span className="font-display text-xs font-semibold text-steelLight">{weight}</span>
                   <div
                     className="w-8 border-2 border-steel bg-steel/20 transition-all duration-700 md:w-11"
                     style={{
-                      height: `${40 + i * 22}px`,
+                      height: `${36 + i * 16}px`,
                       transitionDelay: `${i * 80}ms`,
                     }}
                   />
-                  <span className="font-display text-xs font-semibold text-steelLight">{step.pct}%</span>
+                  <span className="font-display text-xs text-chalkDim">Т{i + 1}</span>
                 </div>
               ))}
             </div>
             <p className="mt-6 text-center text-xs uppercase tracking-widest text-chalkDim">
-              Реална стълбица от Суровецкий — Система №1, тренировка 1
+              Пример: тежестта расте всяка следваща тренировка — автоматично, каквато и програма да избереш
             </p>
           </div>
         </div>
