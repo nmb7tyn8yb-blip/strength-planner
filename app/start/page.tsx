@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
-import { createFirstStartingStrengthWorkout, createFirstWendlerWorkout, createFirstHepburnWorkout, createFirstTexasWorkout, createFirstSurovetskyWorkout } from "@/lib/workout-engine";
+import { createFirstStartingStrengthWorkout, createFirstWendlerWorkout, createFirstHepburnWorkout, createFirstTexasWorkout, createFirstSurovetskyWorkout, createFirstJuggernautClassicWorkout, createFirstJuggernautExcelWorkout } from "@/lib/workout-engine";
 
 type Step = "loading" | "auth" | "profile" | "saving" | "done" | "error";
 type AuthMode = "signup" | "login";
@@ -219,6 +219,36 @@ function StartPageInner() {
 
           if (plan && (programSlug === "surovetsky-1" || programSlug === "surovetsky-2")) {
             await createFirstSurovetskyWorkout(supabase, plan.id, Number(maxes.bench_press) || 60, startDate);
+            firstWorkoutCreated = true;
+          }
+
+          if (plan && programSlug === "juggernaut") {
+            await createFirstJuggernautClassicWorkout(
+              supabase,
+              plan.id,
+              {
+                squat: Number(maxes.squat) || 100,
+                bench_press: Number(maxes.bench_press) || 70,
+                deadlift: Number(maxes.deadlift) || 130,
+                overhead_press: Number(maxes.overhead_press) || 50,
+              },
+              startDate
+            );
+            firstWorkoutCreated = true;
+          }
+
+          if (plan && programSlug === "juggernaut-excel") {
+            await createFirstJuggernautExcelWorkout(
+              supabase,
+              plan.id,
+              {
+                squat: Number(maxes.squat) || 100,
+                bench_press: Number(maxes.bench_press) || 70,
+                deadlift: Number(maxes.deadlift) || 130,
+                overhead_press: Number(maxes.overhead_press) || 50,
+              },
+              startDate
+            );
             firstWorkoutCreated = true;
           }
         }
