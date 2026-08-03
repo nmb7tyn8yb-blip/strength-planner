@@ -16,6 +16,7 @@ import {
   surovetskyDayOffset,
   completeJuggernautClassicWorkout,
   completeJuggernautExcelWorkout,
+  completeCustomWorkout,
   nextTrainingDate,
 } from "@/lib/workout-engine";
 import type { SessionResultInput, LiftSlug } from "@/lib/starting-strength-generator";
@@ -59,6 +60,7 @@ export default function TodayPage() {
   const [plan, setPlan] = useState<any>(null);
   const [programName, setProgramName] = useState("");
   const [programSlug, setProgramSlug] = useState("");
+  const [isCustom, setIsCustom] = useState(false);
   const [workout, setWorkout] = useState<any>(null);
   const [sets, setSets] = useState<WorkoutSetRow[]>([]);
   const [actualReps, setActualReps] = useState<Record<string, number>>({});
@@ -81,7 +83,7 @@ export default function TodayPage() {
 
     const { data: plans } = await supabase
       .from("generated_plans")
-      .select("*, programs(name, slug)")
+      .select("*, programs(name, slug), custom_programs(name, days_per_week)")
       .eq("user_id", userId)
       .eq("status", "active")
       .order("created_at", { ascending: false })
@@ -93,16 +95,31 @@ export default function TodayPage() {
       return;
     }
     setPlan(activePlan);
-    setProgramName(activePlan.programs?.name ?? "");
-    setProgramSlug(activePlan.programs?.slug ?? "");
 
-    if (
-      !["starting-strength", "531", "hepburn-a", "texas-method", "surovetsky-1", "surovetsky-2", "juggernaut", "juggernaut-excel"].includes(
-        activePlan.programs?.slug
-      )
-    ) {
-      setPhase("unsupported");
-      return;
+    if (activePlan.custom_program_id) {
+      setIsCustom(true);
+      setProgramName(activePlan.custom_programs?.name ?? "Моята програма");
+      setProgramSlug("");
+    } else {
+      setIsCustom(false);
+      setProgramName(activePlan.programs?.name ?? "");
+      setProgramSlug(activePlan.programs?.slug ?? "");
+
+      if (
+        ![
+          "starting-strength",
+          "531",
+          "hepburn-a",
+          "texas-method",
+          "surovetsky-1",
+          "surovetsky-2",
+          "juggernaut",
+          "juggernaut-excel",
+        ].includes(activePlan.programs?.slug)
+      ) {
+        setPhase("unsupported");
+        return;
+      }
     }
 
     const { data: workouts } = await supabase
@@ -151,6 +168,11 @@ export default function TodayPage() {
   }
 
   async function handleFinishWorkout() {
+    if (isCustom) {
+      await handleFinishCustom();
+      return;
+    }
+
     if (programSlug === "531") {
       await handleFinishWendler();
       return;
@@ -256,6 +278,38 @@ export default function TodayPage() {
           next
         );
       }
+      setNextDate(next);
+      setPhase("done");
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
+      setPhase("error");
+    }
+  }
+
+  async function handleFinishCustom() {
+    setPhase("submitting");
+    try {
+      const completedRows = sets
+        .filter((s) => s.set_type === "working" || s.set_type === "amrap")
+        .map((s) => ({
+          workout_set_id: s.id,
+          actual_weight: s.planned_weight,
+          actual_reps: actualReps[s.id] ?? 0,
+        }));
+      if (completedRows.length > 0) {
+        await supabase.from("completed_sets").insert(completedRows);
+      }
+
+      const next = nextTrainingDate(workout.scheduled_date, 2);
+      await completeCustomWorkout(
+        supabase,
+        plan.id,
+        workout.id,
+        plan.settings.custom_state,
+        plan.custom_programs?.days_per_week ?? 1,
+        next
+      );
       setNextDate(next);
       setPhase("done");
     } catch (err: any) {
