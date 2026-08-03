@@ -137,15 +137,17 @@ export default function TodayPage() {
   const exerciseGroups = groupBy(sets, (s) => s.exercises.name);
 
   function computeResults(): SessionResultInput[] {
-    return Object.entries(exerciseGroups).map(([name, exerciseSets]) => {
-      const workingSets = exerciseSets.filter((s) => s.set_type === "working");
-      const allCompleted = workingSets.every((s) => (actualReps[s.id] ?? 0) >= s.planned_reps);
-      return {
-        exerciseSlug: EXERCISE_SLUG_BY_NAME[name],
-        allPrescribedSetsCompleted: allCompleted,
-        failureReason: allCompleted ? undefined : (failureReason as any),
-      };
-    });
+    return Object.entries(exerciseGroups)
+      .filter(([name]) => EXERCISE_SLUG_BY_NAME[name] !== undefined) // само основните движения, не помощните
+      .map(([name, exerciseSets]) => {
+        const workingSets = exerciseSets.filter((s) => s.set_type === "working");
+        const allCompleted = workingSets.every((s) => (actualReps[s.id] ?? 0) >= s.planned_reps);
+        return {
+          exerciseSlug: EXERCISE_SLUG_BY_NAME[name],
+          allPrescribedSetsCompleted: allCompleted,
+          failureReason: allCompleted ? undefined : (failureReason as any),
+        };
+      });
   }
 
   async function handleFinishWorkout() {
