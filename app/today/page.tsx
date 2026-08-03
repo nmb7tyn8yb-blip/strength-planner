@@ -210,8 +210,9 @@ export default function TodayPage() {
       );
       setNextDate(next);
       setPhase("done");
-    } catch (err) {
-      setErrorMessage("Нещо се обърка при запазването. Опитай пак.");
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
       setPhase("error");
     }
   }
@@ -255,8 +256,9 @@ export default function TodayPage() {
       }
       setNextDate(next);
       setPhase("done");
-    } catch (err) {
-      setErrorMessage("Нещо се обърка при запазването. Опитай пак.");
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
       setPhase("error");
     }
   }
@@ -293,8 +295,9 @@ export default function TodayPage() {
       );
       setNextDate(next);
       setPhase("done");
-    } catch (err) {
-      setErrorMessage("Нещо се обърка при запазването. Опитай пак.");
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
       setPhase("error");
     }
   }
@@ -344,8 +347,9 @@ export default function TodayPage() {
       );
       setNextDate(next);
       setPhase("done");
-    } catch (err) {
-      setErrorMessage("Нещо се обърка при запазването. Опитай пак.");
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
       setPhase("error");
     }
   }
@@ -383,8 +387,9 @@ export default function TodayPage() {
       );
       setNextDate(next);
       setPhase("done");
-    } catch (err) {
-      setErrorMessage("Нещо се обърка при запазването. Опитай пак.");
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
       setPhase("error");
     }
   }
@@ -416,8 +421,9 @@ export default function TodayPage() {
       );
       setNextDate(next);
       setPhase("done");
-    } catch (err) {
-      setErrorMessage("Нещо се обърка при запазването. Опитай пак.");
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
       setPhase("error");
     }
   }
