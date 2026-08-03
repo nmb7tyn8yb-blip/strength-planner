@@ -65,6 +65,11 @@ async function getExerciseIdMap(supabase: SupabaseClient): Promise<Record<LiftSl
   return map;
 }
 
+async function getAccessoryExerciseId(supabase: SupabaseClient, name: string): Promise<string | null> {
+  const { data } = await supabase.from("exercises").select("id").eq("name", name).single();
+  return data?.id ?? null;
+}
+
 async function insertScheduledSession(
   supabase: SupabaseClient,
   generatedPlanId: string,
@@ -87,6 +92,31 @@ async function insertScheduledSession(
     scheduled_workout_id: workoutRow.id,
     exercise_id: exerciseIdMap[exercise_slug],
   }));
+
+  // В дните без мъртва тяга добавяме набирания — реалната SS програма не
+  // просто пропуска дърпащо движение, а го замества (виж оригиналния текст,
+  // фаза 2/3: "Обръщане" се редува с тягата в тренировка А).
+  const hasDeadlift = session.exercises.some((e) => e.exerciseSlug === "deadlift");
+  if (!hasDeadlift) {
+    const pullUpId = await getAccessoryExerciseId(supabase, "Набирания");
+    if (pullUpId) {
+      const startIndex = setsForDb.length;
+      for (let i = 0; i < 3; i++) {
+        setsForDb.push({
+          scheduled_workout_id: workoutRow.id,
+          exercise_id: pullUpId,
+          order_index: startIndex + i,
+          set_number: i + 1,
+          set_type: "amrap",
+          planned_weight: 0,
+          planned_reps: 6,
+          is_amrap: true,
+          is_paused: false,
+          planned_rest_seconds: 90,
+        });
+      }
+    }
+  }
 
   const { error: setsError } = await supabase.from("workout_sets").insert(setsForDb);
   if (setsError) throw new Error("Не успяхме да запазим сериите.");
@@ -575,6 +605,64 @@ async function insertTexasSession(
   const { error: setsError } = await supabase.from("workout_sets").insert(setsForDb);
   if (setsError) throw new Error("Не успяхме да запазим сериите.");
 
+  // Помощни упражнения по оригиналното разписание: сряда — набирания +
+  // хиперекстензии; петък — обръщане (good morning)
+  const accessoryRows: any[] = [];
+  if (dayType === "recovery") {
+    const pullUpId = await getAccessoryExerciseId(supabase, "Набирания");
+    const hyperextId = await getAccessoryExerciseId(supabase, "Хиперекстензии");
+    if (pullUpId) {
+      for (let i = 0; i < 3; i++) {
+        accessoryRows.push({
+          scheduled_workout_id: workoutRow.id,
+          exercise_id: pullUpId,
+          order_index: orderIndex++,
+          set_number: i + 1,
+          set_type: "amrap",
+          planned_weight: 0,
+          planned_reps: 8,
+          is_amrap: true,
+          planned_rest_seconds: 90,
+        });
+      }
+    }
+    if (hyperextId) {
+      for (let i = 0; i < 3; i++) {
+        accessoryRows.push({
+          scheduled_workout_id: workoutRow.id,
+          exercise_id: hyperextId,
+          order_index: orderIndex++,
+          set_number: i + 1,
+          set_type: "working",
+          planned_weight: 0,
+          planned_reps: 10,
+          planned_rest_seconds: 60,
+        });
+      }
+    }
+  } else if (dayType === "intensity") {
+    const goodMorningId = await getAccessoryExerciseId(supabase, "Обръщане");
+    if (goodMorningId) {
+      for (let i = 0; i < 5; i++) {
+        accessoryRows.push({
+          scheduled_workout_id: workoutRow.id,
+          exercise_id: goodMorningId,
+          order_index: orderIndex++,
+          set_number: i + 1,
+          set_type: "working",
+          planned_weight: 0,
+          planned_reps: 3,
+          planned_rest_seconds: 90,
+        });
+      }
+    }
+  }
+
+  if (accessoryRows.length > 0) {
+    const { error: accessoryError } = await supabase.from("workout_sets").insert(accessoryRows);
+    if (accessoryError) throw new Error("Не успяхме да запазим помощните упражнения.");
+  }
+
   return workoutRow;
 }
 
@@ -763,6 +851,27 @@ async function insertSurovetskySession(
   const { error: setsError } = await supabase.from("workout_sets").insert(setsForDb);
   if (setsError) throw new Error("Не успяхме да запазим сериите.");
 
+  // Опционална добавка на приложението (не от оригинала): леко гребане за
+  // баланс на раменния пояс след месеци само на лежанка. Авторът изрично
+  // забранява само трицепс/делти — гребането не засяга тях.
+  if (!session.isMaxTest) {
+    const rowId = await getAccessoryExerciseId(supabase, "Гребане");
+    if (rowId) {
+      const rowRows = Array.from({ length: 2 }, (_, i) => ({
+        scheduled_workout_id: workoutRow.id,
+        exercise_id: rowId,
+        order_index: setsForDb.length + i,
+        set_number: i + 1,
+        set_type: "working",
+        planned_weight: 0,
+        planned_reps: 10,
+        planned_rest_seconds: 60,
+      }));
+      const { error: rowError } = await supabase.from("workout_sets").insert(rowRows);
+      if (rowError) throw new Error("Не успяхме да запазим опционалното гребане.");
+    }
+  }
+
   return workoutRow;
 }
 
@@ -883,7 +992,44 @@ async function insertJuggernautClassicSession(
 
   if (workoutError || !workoutRow) throw new Error("Не успяхме да създадем тренировката.");
 
-  const setsForDb = sets.map((s, i) => ({
+  // Помощни упражнения за Juggernaut — ОРИГИНАЛЪТ не дава точна схема тук,
+// това е разумна добавка на приложението (не буквално правило): push ден
+// (бенч/преса) получава дърпащо движение за баланс, squat/deadlift ден
+// получава леко упражнение за раменен пояс, което не преуморява вече
+// натоварените мускули.
+function getJuggernautAccessoryPlan(lift: JuggernautLift): { exerciseName: string; sets: number; reps: number } {
+  if (lift === "bench_press" || lift === "overhead_press") {
+    return { exerciseName: "Гребане", sets: 3, reps: 10 };
+  }
+  return { exerciseName: "Задно рамо", sets: 3, reps: 12 };
+}
+
+async function insertJuggernautAccessory(
+  supabase: SupabaseClient,
+  workoutId: string,
+  lift: JuggernautLift,
+  startOrderIndex: number
+) {
+  const accessory = getJuggernautAccessoryPlan(lift);
+  const accessoryId = await getAccessoryExerciseId(supabase, accessory.exerciseName);
+  if (!accessoryId) return;
+
+  const rows = Array.from({ length: accessory.sets }, (_, i) => ({
+    scheduled_workout_id: workoutId,
+    exercise_id: accessoryId,
+    order_index: startOrderIndex + i,
+    set_number: i + 1,
+    set_type: "working",
+    planned_weight: 0,
+    planned_reps: accessory.reps,
+    planned_rest_seconds: 60,
+  }));
+
+  const { error } = await supabase.from("workout_sets").insert(rows);
+  if (error) throw new Error("Не успяхме да запазим помощните упражнения.");
+}
+
+const setsForDb = sets.map((s, i) => ({
     scheduled_workout_id: workoutRow.id,
     exercise_id: exerciseIdMap[lift],
     order_index: i,
@@ -897,6 +1043,8 @@ async function insertJuggernautClassicSession(
 
   const { error: setsError } = await supabase.from("workout_sets").insert(setsForDb);
   if (setsError) throw new Error("Не успяхме да запазим сериите.");
+
+  await insertJuggernautAccessory(supabase, workoutRow.id, lift, setsForDb.length);
 
   return workoutRow;
 }
@@ -1022,6 +1170,8 @@ async function insertJuggernautExcelSession(
 
   const { error: setsError } = await supabase.from("workout_sets").insert(setsForDb);
   if (setsError) throw new Error("Не успяхме да запазим сериите.");
+
+  await insertJuggernautAccessory(supabase, workoutRow.id, lift, setsForDb.length);
 
   return workoutRow;
 }
