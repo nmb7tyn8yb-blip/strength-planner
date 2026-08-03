@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase-client";
 
 const NAV_LINKS = [
   { href: "/programs", label: "Програми" },
+  { href: "/create-program", label: "Създай програма" },
   { href: "/1rm-calculator", label: "1RM Калкулатор" },
   { href: "/quiz", label: "Въпросник" },
   { href: "/dashboard", label: "Табло" },
