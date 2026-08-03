@@ -493,3 +493,205 @@ export async function completeHepburnWorkout(
 export function hepburnDayOffset(dayIndex: number): number {
   return HEPBURN_DAY_OFFSETS[dayIndex];
 }
+
+// =====================================================================
+//  TEXAS METHOD — adapter
+//
+//  Седмичен цикъл от 3 типа дни: обемен (Клек+тежък lift+Тяга) →
+//  възстановителен (Клек леко+лек lift) → интензивен (Клек+тежък lift,
+//  нов PR опит). Тягата се променя само в понеделник; клек/бенч/преса
+//  се преизчисляват от последния петъчен PR всяка седмица.
+// =====================================================================
+
+import {
+  planVolumeDay,
+  planRecoveryDay,
+  planIntensityDay,
+  applyDeadliftResult,
+  applyIntensityDayResult,
+  type TexasMethodState,
+  type TexasMethodSettings,
+  type TexasUpperLift,
+} from "./texas-method-generator";
+
+export type TexasDayType = "volume" | "recovery" | "intensity";
+
+export interface TexasScheduleState {
+  texasState: TexasMethodState;
+  dayType: TexasDayType;
+}
+
+const DEFAULT_TEXAS_SETTINGS: TexasMethodSettings = {
+  roundingIncrementKg: 2.5,
+  volumeDayPercentOfFriday: 0.9,
+  recoveryDayPercentOfMonday: 0.8,
+  fridayIncrementUpperKg: 1.25,
+  fridayIncrementSquatKg: 2.5,
+  deadliftWeeklyIncrementKg: 2.5,
+};
+
+const TEXAS_DAY_OFFSETS: Record<TexasDayType, number> = { volume: 2, recovery: 2, intensity: 3 };
+
+async function insertTexasSession(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  dayType: TexasDayType,
+  weekNumber: number,
+  entries: { lift: LiftSlug; weightKg: number; reps: number; isPrAttempt?: boolean }[],
+  scheduledDate: string
+) {
+  const exerciseIdMap = await getExerciseIdMap(supabase);
+  const dayLabel = { volume: "Обемен ден", recovery: "Възстановителен ден", intensity: "Интензивен ден" }[dayType];
+  const liftNames = [...new Set(entries.map((e) => EXERCISE_NAME_BY_SLUG[e.lift]))].join(" + ");
+
+  const { data: workoutRow, error: workoutError } = await supabase
+    .from("scheduled_workouts")
+    .insert({
+      generated_plan_id: generatedPlanId,
+      scheduled_date: scheduledDate,
+      session_name: `${dayLabel} (седмица ${weekNumber}) — ${liftNames}`,
+      status: "planned",
+      is_deload: false,
+      estimated_duration_minutes: dayType === "volume" ? 70 : dayType === "recovery" ? 45 : 40,
+    })
+    .select()
+    .single();
+
+  if (workoutError || !workoutRow) throw new Error("Не успяхме да създадем тренировката.");
+
+  let orderIndex = 0;
+  const setsForDb = entries.map((e) => ({
+    scheduled_workout_id: workoutRow.id,
+    exercise_id: exerciseIdMap[e.lift],
+    order_index: orderIndex++,
+    set_number: orderIndex,
+    set_type: "working",
+    planned_weight: e.weightKg,
+    planned_reps: e.reps,
+    planned_rest_seconds: dayType === "intensity" ? 300 : dayType === "volume" ? 240 : 150,
+  }));
+
+  const { error: setsError } = await supabase.from("workout_sets").insert(setsForDb);
+  if (setsError) throw new Error("Не успяхме да запазим сериите.");
+
+  return workoutRow;
+}
+
+function buildTexasEntries(
+  dayType: TexasDayType,
+  texasState: TexasMethodState,
+  settings: TexasMethodSettings
+): { lift: LiftSlug; weightKg: number; reps: number }[] {
+  if (dayType === "volume") {
+    const plan = planVolumeDay(texasState, settings);
+    return [
+      ...plan.squat.map((s) => ({ lift: "squat" as LiftSlug, weightKg: s.weightKg, reps: s.reps })),
+      ...plan.heavyUpperLift.sets.map((s) => ({ lift: plan.heavyUpperLift.lift as LiftSlug, weightKg: s.weightKg, reps: s.reps })),
+      { lift: "deadlift" as LiftSlug, weightKg: texasState.lastFridayWeights.deadlift, reps: 5 },
+    ];
+  }
+  if (dayType === "recovery") {
+    const plan = planRecoveryDay(texasState, settings);
+    return [
+      ...plan.squat.map((s) => ({ lift: "squat" as LiftSlug, weightKg: s.weightKg, reps: s.reps })),
+      ...plan.lightUpperLift.sets.map((s) => ({ lift: plan.lightUpperLift.lift as LiftSlug, weightKg: s.weightKg, reps: s.reps })),
+    ];
+  }
+  const plan = planIntensityDay(texasState, settings);
+  return [
+    { lift: "squat", weightKg: plan.squat.weightKg, reps: plan.squat.reps },
+    { lift: plan.upperLift.lift as LiftSlug, weightKg: plan.upperLift.set.weightKg, reps: plan.upperLift.set.reps },
+  ];
+}
+
+/** Извиква се веднъж, при създаване на плана (в /start). */
+export async function createFirstTexasWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  startingWeightsKg: { squat: number; benchPress: number; overheadPress: number; deadlift: number },
+  scheduledDate: string
+) {
+  const settings = DEFAULT_TEXAS_SETTINGS;
+  const texasState: TexasMethodState = {
+    weekNumber: 1,
+    upperLiftThisWeek: "bench_press",
+    lastFridayWeights: {
+      squat: startingWeightsKg.squat,
+      bench_press: startingWeightsKg.benchPress,
+      overhead_press: startingWeightsKg.overheadPress,
+      deadlift: startingWeightsKg.deadlift,
+    },
+  };
+  const state: TexasScheduleState = { texasState, dayType: "volume" };
+
+  const entries = buildTexasEntries("volume", texasState, settings);
+  const workoutRow = await insertTexasSession(supabase, generatedPlanId, "volume", texasState.weekNumber, entries, scheduledDate);
+
+  await supabase
+    .from("generated_plans")
+    .update({ settings: { texas_state: state, texas_settings: settings } })
+    .eq("id", generatedPlanId);
+
+  return workoutRow;
+}
+
+/** Извиква се след като потребителят приключи сесия от /today. */
+export async function completeTexasWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  scheduledWorkoutId: string,
+  state: TexasScheduleState,
+  settings: TexasMethodSettings,
+  results: { squatAchieved: boolean; upperLiftAchieved: boolean; deadliftAchieved?: boolean },
+  attemptedWeights: { squat: number; upperLift: number },
+  nextScheduledDate: string
+) {
+  const overallSuccess =
+    results.squatAchieved && results.upperLiftAchieved && (results.deadliftAchieved ?? true);
+
+  await supabase
+    .from("scheduled_workouts")
+    .update({ status: overallSuccess ? "completed" : "partial" })
+    .eq("id", scheduledWorkoutId);
+
+  let newTexasState = state.texasState;
+  let nextDayType: TexasDayType = "recovery";
+
+  if (state.dayType === "volume") {
+    if (results.deadliftAchieved !== undefined) {
+      newTexasState = applyDeadliftResult(newTexasState, results.deadliftAchieved, settings);
+    }
+    nextDayType = "recovery";
+  } else if (state.dayType === "recovery") {
+    nextDayType = "intensity";
+  } else {
+    newTexasState = applyIntensityDayResult(
+      newTexasState,
+      { squatAchieved: results.squatAchieved, upperLiftAchieved: results.upperLiftAchieved },
+      attemptedWeights
+    );
+    nextDayType = "volume";
+  }
+
+  const newState: TexasScheduleState = { texasState: newTexasState, dayType: nextDayType };
+  const nextEntries = buildTexasEntries(nextDayType, newTexasState, settings);
+  const nextWorkoutRow = await insertTexasSession(
+    supabase,
+    generatedPlanId,
+    nextDayType,
+    newTexasState.weekNumber,
+    nextEntries,
+    nextScheduledDate
+  );
+
+  await supabase
+    .from("generated_plans")
+    .update({ settings: { texas_state: newState, texas_settings: settings } })
+    .eq("id", generatedPlanId);
+
+  return { newState, nextWorkoutRow };
+}
+
+export function texasDayOffset(dayType: TexasDayType): number {
+  return TEXAS_DAY_OFFSETS[dayType];
+}
