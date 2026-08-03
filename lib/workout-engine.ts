@@ -297,3 +297,218 @@ export async function completeWendlerWorkout(
 
   return { newState, nextWorkoutRow };
 }
+
+// =====================================================================
+//  HEPBURN POWER ROUTINE A — adapter
+//
+//  Класическо разписание: Пон/Чет = Клек+Лежанка, Вт/Пет = Тяга+Преса.
+//  Прогресията е СЕДМИЧНА — всяко вдигане се тренира 2 пъти на същата
+//  схема, преди да напредне. Затова всеки lift пази собствен брояч
+//  "sessionsAtCurrentScheme"; на 2-рата успешна сесия схемата напредва.
+// =====================================================================
+
+import {
+  planHepburnLift,
+  generateHepburnWarmup,
+  applyHepburnResult as applyHepburnSchemeResult,
+  DEFAULT_HEPBURN_INCREMENTS_KG,
+  type HepburnSettings,
+  type HepburnLift,
+  type HepburnLiftState,
+} from "./hepburn-generator";
+
+export interface HepburnLiftScheduleState extends HepburnLiftState {
+  sessionsAtCurrentScheme: number; // 0 или 1 — на 2 напредва схемата
+}
+
+export interface HepburnScheduleState {
+  liftStates: Record<HepburnLift, HepburnLiftScheduleState>;
+  dayIndex: number; // 0=Пон(Клек+Лежанка) 1=Вт(Тяга+Преса) 2=Чет(Клек+Лежанка) 3=Пет(Тяга+Преса)
+}
+
+const HEPBURN_DAY_PAIRS: HepburnLift[][] = [
+  ["squat", "bench_press"],
+  ["deadlift", "overhead_press"],
+  ["squat", "bench_press"],
+  ["deadlift", "overhead_press"],
+];
+const HEPBURN_DAY_OFFSETS = [1, 2, 1, 3]; // дни до следващата сесия от текущия dayIndex
+
+const DEFAULT_HEPBURN_SETTINGS: HepburnSettings = {
+  roundingIncrementKg: 2.5,
+  barWeightKg: 20,
+  failureThreshold: 3,
+};
+
+function updateHepburnLiftWeekly(
+  state: HepburnLiftScheduleState,
+  allSetsCompleted: boolean,
+  lift: HepburnLift,
+  settings: HepburnSettings
+): { newState: HepburnLiftScheduleState; needsUserDecision: boolean } {
+  if (!allSetsCompleted) {
+    const result = applyHepburnSchemeResult(state, false, lift, settings);
+    return {
+      newState: { ...result.newState, sessionsAtCurrentScheme: state.sessionsAtCurrentScheme },
+      needsUserDecision: result.needsUserDecision,
+    };
+  }
+
+  const sessionsDone = state.sessionsAtCurrentScheme + 1;
+  if (sessionsDone < 2) {
+    return { newState: { ...state, sessionsAtCurrentScheme: sessionsDone }, needsUserDecision: false };
+  }
+
+  // втора успешна сесия на тази схема тази седмица → напредва
+  const result = applyHepburnSchemeResult(
+    { workingWeightKg: state.workingWeightKg, schemeIndex: state.schemeIndex, consecutiveFailures: 0 },
+    true,
+    lift,
+    settings
+  );
+  return { newState: { ...result.newState, sessionsAtCurrentScheme: 0 }, needsUserDecision: false };
+}
+
+async function insertHepburnSession(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  lifts: HepburnLift[],
+  liftStates: Record<HepburnLift, HepburnLiftScheduleState>,
+  settings: HepburnSettings,
+  scheduledDate: string
+) {
+  const exerciseIdMap = await getExerciseIdMap(supabase);
+  const liftNames = lifts.map((l) => EXERCISE_NAME_BY_SLUG[l]).join(" + ");
+
+  const { data: workoutRow, error: workoutError } = await supabase
+    .from("scheduled_workouts")
+    .insert({
+      generated_plan_id: generatedPlanId,
+      scheduled_date: scheduledDate,
+      session_name: liftNames,
+      status: "planned",
+      is_deload: false,
+      estimated_duration_minutes: 50,
+    })
+    .select()
+    .single();
+
+  if (workoutError || !workoutRow) throw new Error("Не успяхме да създадем тренировката.");
+
+  let orderIndex = 0;
+  const setsForDb: any[] = [];
+
+  for (const lift of lifts) {
+    const liftState = liftStates[lift];
+    const warmup = generateHepburnWarmup(liftState.workingWeightKg, settings);
+    const workingSets = planHepburnLift(liftState);
+
+    warmup.forEach((w, i) => {
+      setsForDb.push({
+        scheduled_workout_id: workoutRow.id,
+        exercise_id: exerciseIdMap[lift],
+        order_index: orderIndex++,
+        set_number: i + 1,
+        set_type: "warmup",
+        planned_weight: w.weightKg,
+        planned_reps: w.reps,
+        planned_rest_seconds: 60,
+      });
+    });
+
+    workingSets.forEach((s, i) => {
+      setsForDb.push({
+        scheduled_workout_id: workoutRow.id,
+        exercise_id: exerciseIdMap[lift],
+        order_index: orderIndex++,
+        set_number: i + 1,
+        set_type: "working",
+        planned_weight: s.weightKg,
+        planned_reps: s.reps,
+        planned_rest_seconds: 120,
+      });
+    });
+  }
+
+  const { error: setsError } = await supabase.from("workout_sets").insert(setsForDb);
+  if (setsError) throw new Error("Не успяхме да запазим сериите.");
+
+  return workoutRow;
+}
+
+/** Извиква се веднъж, при създаване на плана (в /start). */
+export async function createFirstHepburnWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  oneRepMaxesKg: Record<HepburnLift, number>,
+  scheduledDate: string
+) {
+  const settings = DEFAULT_HEPBURN_SETTINGS;
+
+  // Началната тежест ~80% от 1RM Е документирана в оригинала (Muscle & Strength)
+  const liftStates = {} as Record<HepburnLift, HepburnLiftScheduleState>;
+  (Object.keys(oneRepMaxesKg) as HepburnLift[]).forEach((lift) => {
+    const startWeight =
+      Math.round((oneRepMaxesKg[lift] * 0.8) / settings.roundingIncrementKg) * settings.roundingIncrementKg;
+    liftStates[lift] = { workingWeightKg: startWeight, schemeIndex: 1, consecutiveFailures: 0, sessionsAtCurrentScheme: 0 };
+  });
+
+  const state: HepburnScheduleState = { liftStates, dayIndex: 0 };
+  const lifts = HEPBURN_DAY_PAIRS[0];
+  const workoutRow = await insertHepburnSession(supabase, generatedPlanId, lifts, liftStates, settings, scheduledDate);
+
+  await supabase
+    .from("generated_plans")
+    .update({ settings: { hepburn_state: state, hepburn_settings: settings } })
+    .eq("id", generatedPlanId);
+
+  return workoutRow;
+}
+
+/** Извиква се след като потребителят приключи сесия от /today. */
+export async function completeHepburnWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  scheduledWorkoutId: string,
+  state: HepburnScheduleState,
+  settings: HepburnSettings,
+  resultsByLift: Record<HepburnLift, boolean>, // lift -> дали всички серии са изпълнени
+  nextScheduledDate: string
+) {
+  const allSuccess = Object.values(resultsByLift).every(Boolean);
+
+  await supabase
+    .from("scheduled_workouts")
+    .update({ status: allSuccess ? "completed" : "partial" })
+    .eq("id", scheduledWorkoutId);
+
+  const newLiftStates = { ...state.liftStates };
+  (Object.keys(resultsByLift) as HepburnLift[]).forEach((lift) => {
+    const { newState } = updateHepburnLiftWeekly(state.liftStates[lift], resultsByLift[lift], lift, settings);
+    newLiftStates[lift] = newState;
+  });
+
+  const newDayIndex = (state.dayIndex + 1) % 4;
+  const newState: HepburnScheduleState = { liftStates: newLiftStates, dayIndex: newDayIndex };
+
+  const nextLifts = HEPBURN_DAY_PAIRS[newDayIndex];
+  const nextWorkoutRow = await insertHepburnSession(
+    supabase,
+    generatedPlanId,
+    nextLifts,
+    newLiftStates,
+    settings,
+    nextScheduledDate
+  );
+
+  await supabase
+    .from("generated_plans")
+    .update({ settings: { hepburn_state: newState, hepburn_settings: settings } })
+    .eq("id", generatedPlanId);
+
+  return { newState, nextWorkoutRow };
+}
+
+export function hepburnDayOffset(dayIndex: number): number {
+  return HEPBURN_DAY_OFFSETS[dayIndex];
+}
