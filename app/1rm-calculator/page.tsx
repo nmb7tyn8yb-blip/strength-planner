@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   estimateOneRepMax,
   repMaxTable,
@@ -18,8 +19,27 @@ const LIFTS: { key: LiftKey; label: string }[] = [
   { key: "overhead_press", label: "Военна преса" },
 ];
 
+const RETURN_PARAM_BY_LIFT: Record<LiftKey, string> = {
+  squat: "squat",
+  bench_press: "bench",
+  deadlift: "deadlift",
+  overhead_press: "press",
+};
+
 export default function OneRepMaxCalculatorPage() {
-  const [lift, setLift] = useState<LiftKey>("bench_press");
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-graphite" />}>
+      <OneRepMaxCalculatorInner />
+    </Suspense>
+  );
+}
+
+function OneRepMaxCalculatorInner() {
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
+  const liftFromUrl = searchParams.get("lift") as LiftKey | null;
+
+  const [lift, setLift] = useState<LiftKey>(liftFromUrl ?? "bench_press");
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("5");
   const [bodyweight, setBodyweight] = useState("");
@@ -36,6 +56,12 @@ export default function OneRepMaxCalculatorPage() {
   const estimate = estimateOneRepMax(w, r);
   const table = repMaxTable(estimate.average);
   const level = showLevel && bw > 0 ? estimateStrengthLevel(lift, estimate.average, bw, sex, a) : null;
+
+  function buildReturnUrl(): string | null {
+    if (!returnTo || estimate.average <= 0) return null;
+    const separator = returnTo.includes("?") ? "&" : "?";
+    return `${returnTo}${separator}${RETURN_PARAM_BY_LIFT[lift]}=${estimate.average}`;
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -166,6 +192,15 @@ export default function OneRepMaxCalculatorPage() {
             <div className="mt-2 font-display text-5xl font-bold text-amber">
               {estimate.average} <span className="text-2xl text-chalkDim">kg</span>
             </div>
+
+            {returnTo && (
+              <Link
+                href={buildReturnUrl() ?? "#"}
+                className="mt-4 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
+              >
+                Използвай {estimate.average} kg за {LIFTS.find((l) => l.key === lift)?.label} →
+              </Link>
+            )}
 
 
 
