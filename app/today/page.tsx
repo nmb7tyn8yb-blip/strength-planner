@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
 import LoadingScreen from "@/components/loading-screen";
+import EmptyState from "@/components/empty-state";
 import {
   completeStartingStrengthWorkout,
   completeWendlerWorkout,
@@ -427,34 +428,23 @@ export default function TodayPage() {
 
   if (phase === "no-plan") {
     return (
-      <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
-        <div className="mx-auto max-w-xl text-center">
-          <h1 className="font-display text-2xl font-semibold">Нямаш насрочена тренировка</h1>
-          <p className="mt-3 text-chalkDim">
-            Или още нямаш активен план, или си влязъл с друг акаунт.
-          </p>
-          <Link
-            href="/programs"
-            className="mt-6 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
-          >
-            Разгледай програмите →
-          </Link>
-        </div>
-      </main>
+      <EmptyState
+        title="Нямаш насрочена тренировка"
+        description="Или още нямаш активен план, или си влязъл с друг акаунт."
+        ctaHref="/programs"
+        ctaLabel="Разгледай програмите"
+      />
     );
   }
 
   if (phase === "unsupported") {
     return (
-      <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
-        <div className="mx-auto max-w-xl text-center">
-          <h1 className="font-display text-2xl font-semibold">{programName}</h1>
-          <p className="mt-3 text-chalkDim">
-            Тази програма все още не е свързана с този екран — но всичките 8 програми
-            вече имат готова логика, скоро ще бъде и тук.
-          </p>
-        </div>
-      </main>
+      <EmptyState
+        title={programName}
+        description="Тази програма все още не е свързана с този екран — но всичките 8 програми вече имат готова логика, скоро ще бъде и тук."
+        ctaHref="/dashboard"
+        ctaLabel="Обратно към таблото"
+      />
     );
   }
 
