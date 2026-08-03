@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
 import { getCurrentWorkingWeights } from "@/lib/workout-engine";
+import LoadingScreen from "@/components/loading-screen";
 
 const LIFT_LABEL: Record<string, string> = {
   squat: "Клек",
@@ -105,7 +106,7 @@ export default function DashboardPage() {
   const past = workouts.filter((w) => w.status !== "planned").slice(-8).reverse();
 
   if (phase === "loading") {
-    return <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">Зареждане…</main>;
+    return <LoadingScreen label="Зареждаме таблото ти…" />;
   }
 
   if (phase === "no-plan") {
