@@ -16,6 +16,13 @@ interface RecommendationProfile {
   pitch: string;
 }
 
+interface DetailedDescription {
+  overview?: string;
+  how_it_works?: string;
+  best_for?: string[];
+  considerations?: string[];
+}
+
 interface ProgramRow {
   slug: string;
   name: string;
@@ -27,6 +34,7 @@ interface ProgramRow {
   required_equipment: string[] | null;
   failure_rule_summary: string | null;
   recommendation_profile: RecommendationProfile;
+  detailed_description: DetailedDescription | null;
 }
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -91,6 +99,62 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
         <div className="mt-8 border-l-2 border-amber pl-5">
           <p className="text-lg text-chalk">{p.pitch}</p>
         </div>
+
+        {/* Подробно описание */}
+        {program.detailed_description && (
+          <div className="mt-10 grid gap-8">
+            {program.detailed_description.overview && (
+              <div>
+                <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
+                  Какво представлява
+                </h2>
+                <p className="mt-2 leading-relaxed text-chalk">{program.detailed_description.overview}</p>
+              </div>
+            )}
+
+            {program.detailed_description.how_it_works && (
+              <div>
+                <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
+                  Как точно работи
+                </h2>
+                <p className="mt-2 leading-relaxed text-chalk">{program.detailed_description.how_it_works}</p>
+              </div>
+            )}
+
+            <div className="grid gap-8 sm:grid-cols-2">
+              {program.detailed_description.best_for && program.detailed_description.best_for.length > 0 && (
+                <div>
+                  <h2 className="font-display text-sm uppercase tracking-widest text-steelLight">
+                    За кого е подходяща
+                  </h2>
+                  <ul className="mt-2 space-y-2">
+                    {program.detailed_description.best_for.map((item, i) => (
+                      <li key={i} className="flex gap-2 text-sm leading-relaxed text-chalk">
+                        <span className="text-steelLight">✓</span> {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {program.detailed_description.considerations &&
+                program.detailed_description.considerations.length > 0 && (
+                  <div>
+                    <h2 className="font-display text-sm uppercase tracking-widest text-amber">
+                      На какво да обърнеш внимание
+                    </h2>
+                    <ul className="mt-2 space-y-2">
+                      {program.detailed_description.considerations.map((item, i) => (
+                        <li key={i} className="flex gap-2 text-sm leading-relaxed text-chalk">
+                          <span className="text-amber">!</span> {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+            </div>
+          </div>
+        )}
 
         {/* Детайли */}
         <div className="mt-12 grid gap-8 md:grid-cols-2">
