@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface RecommendationProfile {
   goals: string[];
   experience_min: string;
