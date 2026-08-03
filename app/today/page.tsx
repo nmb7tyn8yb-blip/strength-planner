@@ -12,6 +12,8 @@ import {
   texasDayOffset,
   completeSurovetskyWorkout,
   surovetskyDayOffset,
+  completeJuggernautClassicWorkout,
+  completeJuggernautExcelWorkout,
   nextTrainingDate,
 } from "@/lib/workout-engine";
 import type { SessionResultInput, LiftSlug } from "@/lib/starting-strength-generator";
@@ -93,7 +95,7 @@ export default function TodayPage() {
     setProgramSlug(activePlan.programs?.slug ?? "");
 
     if (
-      !["starting-strength", "531", "hepburn-a", "texas-method", "surovetsky-1", "surovetsky-2"].includes(
+      !["starting-strength", "531", "hepburn-a", "texas-method", "surovetsky-1", "surovetsky-2", "juggernaut", "juggernaut-excel"].includes(
         activePlan.programs?.slug
       )
     ) {
@@ -155,6 +157,11 @@ export default function TodayPage() {
       return;
     }
 
+    if (programSlug === "juggernaut" || programSlug === "juggernaut-excel") {
+      await handleFinishJuggernaut();
+      return;
+    }
+
     const results = computeResults();
     const anyFailure = results.some((r) => !r.allPrescribedSetsCompleted);
 
@@ -199,6 +206,51 @@ export default function TodayPage() {
         finalResults,
         next
       );
+      setNextDate(next);
+      setPhase("done");
+    } catch (err) {
+      setErrorMessage("Нещо се обърка при запазването. Опитай пак.");
+      setPhase("error");
+    }
+  }
+
+  async function handleFinishJuggernaut() {
+    setPhase("submitting");
+    try {
+      const amrapSet = sets.find((s) => s.is_amrap);
+      const amrapReps = amrapSet ? actualReps[amrapSet.id] : undefined;
+
+      const completedRows = sets.map((s) => ({
+        workout_set_id: s.id,
+        actual_weight: s.planned_weight,
+        actual_reps: actualReps[s.id] ?? 0,
+      }));
+      if (completedRows.length > 0) {
+        await supabase.from("completed_sets").insert(completedRows);
+      }
+
+      const next = nextTrainingDate(workout.scheduled_date, 2);
+      const isExcel = plan.settings.juggernaut_variant === "excel";
+
+      if (isExcel) {
+        await completeJuggernautExcelWorkout(
+          supabase,
+          plan.id,
+          workout.id,
+          plan.settings.juggernaut_state,
+          amrapReps,
+          next
+        );
+      } else {
+        await completeJuggernautClassicWorkout(
+          supabase,
+          plan.id,
+          workout.id,
+          plan.settings.juggernaut_state,
+          amrapReps,
+          next
+        );
+      }
       setNextDate(next);
       setPhase("done");
     } catch (err) {
@@ -397,8 +449,8 @@ export default function TodayPage() {
         <div className="mx-auto max-w-xl text-center">
           <h1 className="font-display text-2xl font-semibold">{programName}</h1>
           <p className="mt-3 text-chalkDim">
-            Този екран засега поддържа Starting Strength, Wendler 5/3/1, Hepburn, Texas
-            Method и Суровецкий — твоята програма е следваща на опашката за добавяне.
+            Тази програма все още не е свързана с този екран — но всичките 8 програми
+            вече имат готова логика, скоро ще бъде и тук.
           </p>
         </div>
       </main>
