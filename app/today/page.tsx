@@ -487,42 +487,72 @@ export default function TodayPage() {
                 <h2 className="font-display text-lg font-semibold">{name}</h2>
 
                 <div className="mt-4 grid gap-2">
-                  {exerciseSets.map((s) => (
-                    <div key={s.id} className="flex items-center justify-between border border-white/10 px-4 py-3">
-                      <span className="text-chalk">
-                        {s.planned_weight} kg × {s.planned_reps}
-                        {s.is_amrap ? "+ (AMRAP)" : ""}
-                        {s.set_type === "test" ? " (проходка)" : ""} (план)
-                        {s.is_paused && (
-                          <span className="ml-2 rounded-sm bg-amber/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber">
-                            Пауза 2-3 сек
-                          </span>
-                        )}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-chalkDim">Направени:</span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={actualReps[s.id] ?? 0}
-                          onChange={(e) =>
-                            setActualReps({ ...actualReps, [s.id]: Number(e.target.value) })
-                          }
-                          className="w-16 border-2 border-white/15 bg-transparent px-2 py-1 text-center text-chalk focus:border-amber"
-                        />
+                  {exerciseSets.map((s) => {
+                    const achieved = actualReps[s.id] ?? 0;
+                    const isAmrapOrTest = s.is_amrap || s.set_type === "test";
+                    const met = isAmrapOrTest ? achieved > 0 : achieved >= s.planned_reps;
+                    const rowColor = met ? "border-green-700/50" : achieved === 0 ? "border-white/10" : "border-amber/50";
+
+                    return (
+                      <div
+                        key={s.id}
+                        className={`flex items-center justify-between border px-4 py-3 transition-colors ${rowColor}`}
+                      >
+                        <span className="text-chalk">
+                          {s.planned_weight} kg × {s.planned_reps}
+                          {s.is_amrap ? "+ (AMRAP)" : ""}
+                          {s.set_type === "test" ? " (проходка)" : ""} (план)
+                          {s.is_paused && (
+                            <span className="ml-2 rounded-sm bg-amber/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber">
+                              Пауза 2-3 сек
+                            </span>
+                          )}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {met && <span className="text-green-500">✓</span>}
+                          <span className="text-sm text-chalkDim">Направени:</span>
+                          <button
+                            type="button"
+                            onClick={() => setActualReps({ ...actualReps, [s.id]: Math.max(0, achieved - 1) })}
+                            className="h-7 w-7 border border-white/15 text-chalkDim transition hover:border-amber hover:text-amber"
+                          >
+                            −
+                          </button>
+                          <input
+                            type="number"
+                            min={0}
+                            value={achieved}
+                            onChange={(e) => setActualReps({ ...actualReps, [s.id]: Number(e.target.value) })}
+                            className="w-14 border-2 border-white/15 bg-transparent px-2 py-1 text-center text-chalk focus:border-amber"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setActualReps({ ...actualReps, [s.id]: achieved + 1 })}
+                            className="h-7 w-7 border border-white/15 text-chalkDim transition hover:border-amber hover:text-amber"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
 
-            <button
-              onClick={handleFinishWorkout}
-              className="border-2 border-amber bg-amber px-6 py-4 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
-            >
-              Завърши тренировката →
-            </button>
+            <div className="flex items-center justify-between border-t border-white/10 pt-6">
+              <p className="text-sm text-chalkDim">
+                {sets.filter((s) => (actualReps[s.id] ?? 0) >= s.planned_reps || s.is_amrap || s.set_type === "test")
+                  .length}{" "}
+                от {sets.length} серии отбелязани
+              </p>
+              <button
+                onClick={handleFinishWorkout}
+                className="border-2 border-amber bg-amber px-6 py-4 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
+              >
+                Завърши тренировката →
+              </button>
+            </div>
           </div>
         )}
 
