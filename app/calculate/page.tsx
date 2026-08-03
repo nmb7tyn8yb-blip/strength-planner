@@ -21,6 +21,26 @@ import {
   type HepburnSettings,
   type HepburnLift,
 } from "@/lib/hepburn-generator";
+import {
+  initTexasMethodState,
+  planVolumeDay,
+  type TexasMethodSettings,
+} from "@/lib/texas-method-generator";
+import {
+  initTableEngineState,
+  planTableSession,
+} from "@/lib/table-driven-engine";
+import { surovetskySystem1 } from "@/lib/surovetsky-tables";
+import {
+  initJuggernautClassicState,
+  planJuggernautWeek,
+  type JuggernautLift,
+} from "@/lib/juggernaut-classic-generator";
+import {
+  initJuggernautExcelState,
+  planJuggernautExcelWeek,
+  DEFAULT_JUGGERNAUT_EXCEL_SETTINGS,
+} from "@/lib/juggernaut-excel-generator";
 
 const LIFTS: { key: WendlerLift; label: string }[] = [
   { key: "squat", label: "Клек" },
@@ -43,7 +63,25 @@ const SS_SETTINGS: StartingStrengthSettings = {
   barWeightKg: 20,
 };
 
-const SUPPORTED_PROGRAMS = ["531", "starting-strength", "hepburn-a"];
+const SUPPORTED_PROGRAMS = [
+  "531",
+  "starting-strength",
+  "hepburn-a",
+  "texas-method",
+  "surovetsky-1",
+  "surovetsky-2",
+  "juggernaut",
+  "juggernaut-excel",
+];
+
+const TEXAS_SETTINGS: TexasMethodSettings = {
+  roundingIncrementKg: 2.5,
+  volumeDayPercentOfFriday: 0.9,
+  recoveryDayPercentOfMonday: 0.8,
+  fridayIncrementUpperKg: 1.25,
+  fridayIncrementSquatKg: 2.5,
+  deadliftWeeklyIncrementKg: 2.5,
+};
 
 const HEPBURN_SETTINGS: HepburnSettings = {
   roundingIncrementKg: 2.5,
@@ -205,6 +243,22 @@ function CalculateInner() {
 
         {supported && showResults && programSlug === "hepburn-a" && (
           <HepburnResults startingWeights={effectiveStartingWeights} />
+        )}
+
+        {supported && showResults && programSlug === "texas-method" && (
+          <TexasMethodResults oneRepMaxes={numericMaxes} />
+        )}
+
+        {supported && showResults && (programSlug === "surovetsky-1" || programSlug === "surovetsky-2") && (
+          <SurovetskyResults benchOneRepMax={numericMaxes.bench_press} />
+        )}
+
+        {supported && showResults && programSlug === "juggernaut" && (
+          <JuggernautResults oneRepMaxes={numericMaxes} variant="classic" />
+        )}
+
+        {supported && showResults && programSlug === "juggernaut-excel" && (
+          <JuggernautResults oneRepMaxes={numericMaxes} variant="excel" />
         )}
 
         {supported && showResults && (
@@ -380,6 +434,145 @@ function HepburnResults({ startingWeights }: { startingWeights: Record<WendlerLi
                   <div key={i} className="border border-white/10 p-2 text-center">
                     <div className="font-display text-sm font-bold text-steelLight">{set.weightKg}</div>
                     <div className="text-xs text-chalkDim">×{set.reps}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TexasMethodResults({ oneRepMaxes }: { oneRepMaxes: Record<WendlerLift, number> }) {
+  // Texas Method иска "текущ 5RM или работна тежест" (документирано в оригинала) —
+  // оценяваме 5RM от 1RM по формулата на Brzycki (~89%), без допълнителен запас.
+  const estimate5RM = (max: number) => Math.round((max * (32 / 36)) / 2.5) * 2.5;
+
+  const state = initTexasMethodState({
+    squat: estimate5RM(oneRepMaxes.squat),
+    benchPress: estimate5RM(oneRepMaxes.bench_press),
+    overheadPress: estimate5RM(oneRepMaxes.overhead_press),
+    deadlift: estimate5RM(oneRepMaxes.deadlift),
+  });
+  const plan = planVolumeDay(state, TEXAS_SETTINGS);
+
+  return (
+    <div className="mt-10">
+      <h2 className="font-display text-xl font-semibold">Понеделник — обемен ден</h2>
+      <p className="mt-1 text-sm text-chalkDim">
+        Тежестите са оценени от твоя 1RM (формула на Brzycki за 5RM) — Texas Method
+        реално иска текущ 5RM, не максимум.
+      </p>
+
+      <div className="mt-6 grid gap-6">
+        <div className="border-2 border-white/15 p-5">
+          <h3 className="font-display text-lg font-semibold">Клек</h3>
+          <div className="mt-3 grid grid-cols-5 gap-2">
+            {plan.squat.map((s, i) => (
+              <div key={i} className="border border-white/10 p-2 text-center">
+                <div className="font-display text-sm font-bold text-steelLight">{s.weightKg}</div>
+                <div className="text-xs text-chalkDim">×{s.reps}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="border-2 border-white/15 p-5">
+          <h3 className="font-display text-lg font-semibold">{LIFT_LABEL_BG[plan.heavyUpperLift.lift]}</h3>
+          <div className="mt-3 grid grid-cols-5 gap-2">
+            {plan.heavyUpperLift.sets.map((s, i) => (
+              <div key={i} className="border border-white/10 p-2 text-center">
+                <div className="font-display text-sm font-bold text-steelLight">{s.weightKg}</div>
+                <div className="text-xs text-chalkDim">×{s.reps}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="border-2 border-white/15 p-5">
+          <h3 className="font-display text-lg font-semibold">Мъртва тяга</h3>
+          <div className="mt-3 grid grid-cols-1 gap-2 w-24">
+            <div className="border border-white/10 p-2 text-center">
+              <div className="font-display text-sm font-bold text-steelLight">{state.currentDeadliftKg}</div>
+              <div className="text-xs text-chalkDim">×5</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SurovetskyResults({ benchOneRepMax }: { benchOneRepMax: number }) {
+  const state = initTableEngineState("surovetsky-1", benchOneRepMax);
+  const { session, sets } = planTableSession(surovetskySystem1, state, 2.5);
+
+  return (
+    <div className="mt-10">
+      <h2 className="font-display text-xl font-semibold">{session.name}</h2>
+      <p className="mt-1 text-sm text-chalkDim">
+        Точните проценти от оригиналните таблици, изчислени от твоя реален максимум.
+      </p>
+      <div className="mt-6 grid grid-cols-4 gap-2 sm:grid-cols-7">
+        {sets.map((s, i) => (
+          <div key={i} className="border border-white/10 p-2 text-center">
+            <div className="font-display text-sm font-bold text-steelLight">{s.weightKg}</div>
+            <div className="text-xs text-chalkDim">
+              ×{s.reps}
+              {s.isPausedRep ? " ⏸" : ""}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function JuggernautResults({
+  oneRepMaxes,
+  variant,
+}: {
+  oneRepMaxes: Record<WendlerLift, number>;
+  variant: "classic" | "excel";
+}) {
+  return (
+    <div className="mt-10">
+      <h2 className="font-display text-xl font-semibold">Седмица 1 (натрупване)</h2>
+      <p className="mt-1 text-sm text-chalkDim">
+        Тренировъчен максимум = 90% от въведения 1RM.{" "}
+        {variant === "classic" ? "Класически 16-седмичен вариант." : "Опростен 12-седмичен вариант."}
+      </p>
+
+      <div className="mt-6 grid gap-6">
+        {LIFTS.map((lift) => {
+          const sets =
+            variant === "classic"
+              ? planJuggernautWeek(
+                  lift.key as JuggernautLift,
+                  initJuggernautClassicState(oneRepMaxes as any, {
+                    roundingIncrementKg: 2.5,
+                    trainingMaxPercentOf1RM: 0.9,
+                    progressionStyle: "standard",
+                  }),
+                  { roundingIncrementKg: 2.5, trainingMaxPercentOf1RM: 0.9, progressionStyle: "standard" }
+                )
+              : planJuggernautExcelWeek(
+                  lift.key as JuggernautLift,
+                  initJuggernautExcelState(oneRepMaxes as any, DEFAULT_JUGGERNAUT_EXCEL_SETTINGS),
+                  DEFAULT_JUGGERNAUT_EXCEL_SETTINGS
+                );
+
+          return (
+            <div key={lift.key} className="border-2 border-white/15 p-5">
+              <h3 className="font-display text-lg font-semibold">{lift.label}</h3>
+              <div className="mt-3 grid grid-cols-5 gap-2">
+                {sets.map((s, i) => (
+                  <div key={i} className="border border-white/10 p-2 text-center">
+                    <div className="font-display text-sm font-bold text-steelLight">{s.weightKg}</div>
+                    <div className="text-xs text-chalkDim">
+                      ×{s.reps}
+                      {s.isAmrap ? "+" : ""}
+                    </div>
                   </div>
                 ))}
               </div>
