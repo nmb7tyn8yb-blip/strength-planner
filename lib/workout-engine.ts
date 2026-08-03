@@ -695,3 +695,114 @@ export async function completeTexasWorkout(
 export function texasDayOffset(dayType: TexasDayType): number {
   return TEXAS_DAY_OFFSETS[dayType];
 }
+
+// =====================================================================
+//  СУРОВЕЦКИЙ (Система №1 → №2 → нов максимум → пак №1) — adapter
+//
+//  Само лежанка, табличен движок (table-driven-engine.ts). Тренировки
+//  12 (Сис.№1) / 6 (Сис.№2), последната от всеки цикъл е тест за нов
+//  максимум ("проходка") — изисква потребителят да въведе реално
+//  постигнатия резултат, не просто повторения.
+// =====================================================================
+
+import {
+  planTableSession,
+  advanceTableSession,
+  initTableEngineState,
+  type ProgramTable,
+  type TableEngineState,
+} from "./table-driven-engine";
+import { surovetskySystem1, surovetskySystem2 } from "./surovetsky-tables";
+
+const SUROVETSKY_TABLES: Record<string, ProgramTable> = {
+  "surovetsky-1": surovetskySystem1,
+  "surovetsky-2": surovetskySystem2,
+};
+const SUROVETSKY_ROUNDING_KG = 2.5;
+const SUROVETSKY_DAY_OFFSETS = [2, 2, 3]; // Пон→Ср, Ср→Пет, Пет→следващ Пон
+
+async function insertSurovetskySession(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  table: ProgramTable,
+  state: TableEngineState,
+  scheduledDate: string
+) {
+  const { session, sets } = planTableSession(table, state, SUROVETSKY_ROUNDING_KG);
+  const exerciseIdMap = await getExerciseIdMap(supabase);
+
+  const { data: workoutRow, error: workoutError } = await supabase
+    .from("scheduled_workouts")
+    .insert({
+      generated_plan_id: generatedPlanId,
+      scheduled_date: scheduledDate,
+      session_name: `${table.name} — ${session.name}`,
+      status: "planned",
+      is_max_test: !!session.isMaxTest,
+      estimated_duration_minutes: session.isMaxTest ? 60 : 50,
+    })
+    .select()
+    .single();
+
+  if (workoutError || !workoutRow) throw new Error("Не успяхме да създадем тренировката.");
+
+  const setsForDb = sets.map((s, i) => ({
+    scheduled_workout_id: workoutRow.id,
+    exercise_id: exerciseIdMap["bench_press" as LiftSlug],
+    order_index: i,
+    set_number: i + 1,
+    set_type: s.label === "загряване" ? "warmup" : s.label === "проходка" ? "test" : "working",
+    planned_weight: s.weightKg,
+    planned_reps: s.reps,
+    is_amrap: s.isAmrap,
+    is_paused: s.isPausedRep,
+    planned_rest_seconds: s.weightKg > 0 ? Math.round(60 + (s.weightKg / (state.currentMaxKg || 1)) * 300) : 90,
+  }));
+
+  const { error: setsError } = await supabase.from("workout_sets").insert(setsForDb);
+  if (setsError) throw new Error("Не успяхме да запазим сериите.");
+
+  return workoutRow;
+}
+
+/** Извиква се веднъж, при създаване на плана (в /start). */
+export async function createFirstSurovetskyWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  benchOneRepMaxKg: number,
+  scheduledDate: string
+) {
+  const state = initTableEngineState("surovetsky-1", benchOneRepMaxKg);
+  const workoutRow = await insertSurovetskySession(supabase, generatedPlanId, surovetskySystem1, state, scheduledDate);
+
+  await supabase.from("generated_plans").update({ settings: { surovetsky_state: state } }).eq("id", generatedPlanId);
+
+  return workoutRow;
+}
+
+/** Извиква се след като потребителят приключи тренировка от /today.
+ *  confirmedNewMaxKg е задължителен само ако тренировката е тест ("проходка"). */
+export async function completeSurovetskyWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  scheduledWorkoutId: string,
+  state: TableEngineState,
+  nextScheduledDate: string,
+  confirmedNewMaxKg?: number
+) {
+  await supabase.from("scheduled_workouts").update({ status: "completed" }).eq("id", scheduledWorkoutId);
+
+  const currentTable = SUROVETSKY_TABLES[state.tableSlug];
+  const newState = advanceTableSession(currentTable, state, confirmedNewMaxKg);
+  const nextTable = SUROVETSKY_TABLES[newState.tableSlug];
+
+  const nextWorkoutRow = await insertSurovetskySession(supabase, generatedPlanId, nextTable, newState, nextScheduledDate);
+
+  await supabase.from("generated_plans").update({ settings: { surovetsky_state: newState } }).eq("id", generatedPlanId);
+
+  return { newState, nextWorkoutRow };
+}
+
+export function surovetskyDayOffset(sessionIndexInCycle: number): number {
+  return SUROVETSKY_DAY_OFFSETS[sessionIndexInCycle % 3];
+}
