@@ -231,6 +231,14 @@ export default function CreateProgramPage() {
               </div>
 
               <div className="mt-4 grid gap-3">
+                <div className="grid grid-cols-12 gap-2 px-3 text-xs uppercase tracking-wide text-chalkDim">
+                  <span className="col-span-4">Упражнение</span>
+                  <span className="col-span-2 text-center">Серии</span>
+                  <span className="col-span-2 text-center">Повторения</span>
+                  <span className="col-span-2 text-center">Кг</span>
+                  <span className="col-span-1 text-center">Почивка сек</span>
+                  <span className="col-span-1"></span>
+                </div>
                 {session.exercises.map((ex, eIndex) => (
                   <div key={eIndex} className="grid grid-cols-12 items-center gap-2 border border-white/10 p-3">
                     <input
