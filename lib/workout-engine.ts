@@ -587,7 +587,7 @@ function buildTexasEntries(
     return [
       ...plan.squat.map((s) => ({ lift: "squat" as LiftSlug, weightKg: s.weightKg, reps: s.reps })),
       ...plan.heavyUpperLift.sets.map((s) => ({ lift: plan.heavyUpperLift.lift as LiftSlug, weightKg: s.weightKg, reps: s.reps })),
-      { lift: "deadlift" as LiftSlug, weightKg: texasState.lastFridayWeights.deadlift, reps: 5 },
+      { lift: "deadlift" as LiftSlug, weightKg: texasState.currentDeadliftKg, reps: 5 },
     ];
   }
   if (dayType === "recovery") {
@@ -615,12 +615,12 @@ export async function createFirstTexasWorkout(
   const texasState: TexasMethodState = {
     weekNumber: 1,
     upperLiftThisWeek: "bench_press",
-    lastFridayWeights: {
-      squat: startingWeightsKg.squat,
+    lastFridaySquatKg: startingWeightsKg.squat,
+    lastHeavyUpperKg: {
       bench_press: startingWeightsKg.benchPress,
       overhead_press: startingWeightsKg.overheadPress,
-      deadlift: startingWeightsKg.deadlift,
     },
+    currentDeadliftKg: startingWeightsKg.deadlift,
   };
   const state: TexasScheduleState = { texasState, dayType: "volume" };
 
