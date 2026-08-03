@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
-import { createFirstStartingStrengthWorkout, createFirstWendlerWorkout } from "@/lib/workout-engine";
+import { createFirstStartingStrengthWorkout, createFirstWendlerWorkout, createFirstHepburnWorkout } from "@/lib/workout-engine";
 
 type Step = "loading" | "auth" | "profile" | "saving" | "done" | "error";
 type AuthMode = "signup" | "login";
@@ -174,6 +174,21 @@ function StartPageInner() {
 
           if (plan && programSlug === "531") {
             await createFirstWendlerWorkout(
+              supabase,
+              plan.id,
+              {
+                squat: Number(maxes.squat) || 60,
+                bench_press: Number(maxes.bench_press) || 40,
+                deadlift: Number(maxes.deadlift) || 80,
+                overhead_press: Number(maxes.overhead_press) || 30,
+              },
+              startDate
+            );
+            firstWorkoutCreated = true;
+          }
+
+          if (plan && programSlug === "hepburn-a") {
+            await createFirstHepburnWorkout(
               supabase,
               plan.id,
               {
