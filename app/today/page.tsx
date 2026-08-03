@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase-client";
 import {
   completeStartingStrengthWorkout,
   completeWendlerWorkout,
+  completeHepburnWorkout,
+  hepburnDayOffset,
   nextTrainingDate,
 } from "@/lib/workout-engine";
 import type { SessionResultInput, LiftSlug } from "@/lib/starting-strength-generator";
@@ -83,7 +85,7 @@ export default function TodayPage() {
     setProgramName(activePlan.programs?.name ?? "");
     setProgramSlug(activePlan.programs?.slug ?? "");
 
-    if (!["starting-strength", "531"].includes(activePlan.programs?.slug)) {
+    if (!["starting-strength", "531", "hepburn-a"].includes(activePlan.programs?.slug)) {
       setPhase("unsupported");
       return;
     }
@@ -143,6 +145,11 @@ export default function TodayPage() {
       return;
     }
 
+    if (programSlug === "hepburn-a") {
+      await handleFinishHepburn();
+      return;
+    }
+
     setPhase("submitting");
     try {
       const finalResults = computeResults();
@@ -167,6 +174,45 @@ export default function TodayPage() {
         plan.settings.ss_state,
         plan.settings.ss_settings,
         finalResults,
+        next
+      );
+      setNextDate(next);
+      setPhase("done");
+    } catch (err) {
+      setErrorMessage("Нещо се обърка при запазването. Опитай пак.");
+      setPhase("error");
+    }
+  }
+
+  async function handleFinishHepburn() {
+    setPhase("submitting");
+    try {
+      const finalResults = computeResults();
+      const resultsByLift: Record<string, boolean> = {};
+      finalResults.forEach((r) => {
+        resultsByLift[r.exerciseSlug] = r.allPrescribedSetsCompleted;
+      });
+
+      const completedRows = sets
+        .filter((s) => s.set_type === "working")
+        .map((s) => ({
+          workout_set_id: s.id,
+          actual_weight: s.planned_weight,
+          actual_reps: actualReps[s.id] ?? 0,
+        }));
+      if (completedRows.length > 0) {
+        await supabase.from("completed_sets").insert(completedRows);
+      }
+
+      const offset = hepburnDayOffset(plan.settings.hepburn_state.dayIndex);
+      const next = nextTrainingDate(workout.scheduled_date, offset);
+      await completeHepburnWorkout(
+        supabase,
+        plan.id,
+        workout.id,
+        plan.settings.hepburn_state,
+        plan.settings.hepburn_settings,
+        resultsByLift as any,
         next
       );
       setNextDate(next);
@@ -239,8 +285,8 @@ export default function TodayPage() {
         <div className="mx-auto max-w-xl text-center">
           <h1 className="font-display text-2xl font-semibold">{programName}</h1>
           <p className="mt-3 text-chalkDim">
-            Този екран засега поддържа Starting Strength и Wendler 5/3/1 — твоята
-            програма е следваща на опашката за добавяне.
+            Този екран засега поддържа Starting Strength, Wendler 5/3/1 и Hepburn —
+            твоята програма е следваща на опашката за добавяне.
           </p>
         </div>
       </main>
