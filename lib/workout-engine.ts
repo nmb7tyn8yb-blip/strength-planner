@@ -87,7 +87,7 @@ async function insertScheduledSession(
 
   if (workoutError || !workoutRow) throw new Error("Не успяхме да създадем тренировката.");
 
-  const setsForDb = sets.map(({ exercise_slug, ...rest }) => ({
+  const setsForDb: any[] = sets.map(({ exercise_slug, ...rest }) => ({
     ...rest,
     scheduled_workout_id: workoutRow.id,
     exercise_id: exerciseIdMap[exercise_slug],
