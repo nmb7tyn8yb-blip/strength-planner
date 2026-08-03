@@ -110,10 +110,10 @@ function CalculateInner() {
   const supported = SUPPORTED_PROGRAMS.includes(programSlug);
 
   const [maxes, setMaxes] = useState<Record<WendlerLift, string>>({
-    squat: "",
-    bench_press: "",
-    deadlift: "",
-    overhead_press: "",
+    squat: searchParams.get("squat") ?? "",
+    bench_press: searchParams.get("bench") ?? "",
+    deadlift: searchParams.get("deadlift") ?? "",
+    overhead_press: searchParams.get("press") ?? "",
   });
   const [showResults, setShowResults] = useState(false);
 
@@ -207,9 +207,19 @@ function CalculateInner() {
             <div className="grid grid-cols-2 gap-4">
               {LIFTS.map((lift) => (
                 <div key={lift.key}>
-                  <label className="text-xs uppercase tracking-widest text-chalkDim">
-                    {lift.label} — {inputLabel} (kg)
-                  </label>
+                  <div className="flex items-baseline justify-between">
+                    <label className="text-xs uppercase tracking-widest text-chalkDim">
+                      {lift.label} — {inputLabel} (kg)
+                    </label>
+                    <Link
+                      href={`/1rm-calculator?lift=${lift.key}&returnTo=${encodeURIComponent(
+                        `/calculate?program=${programSlug}&squat=${maxes.squat}&bench=${maxes.bench_press}&deadlift=${maxes.deadlift}&press=${maxes.overhead_press}`
+                      )}`}
+                      className="text-xs text-steelLight underline-offset-4 hover:underline"
+                    >
+                      Не знаеш максимума? →
+                    </Link>
+                  </div>
                   <input
                     type="number"
                     min={0}
