@@ -1312,3 +1312,142 @@ export function getCurrentWorkingWeights(
     return null;
   }
 }
+
+// =====================================================================
+//  СОБСТВЕНИ ПРОГРАМИ — потребителят е дефинирал седмичен шаблон;
+//  движокът просто го повтаря всяка седмица, без алгоритмична
+//  прогресия (потребителят сам решава кога да смени тежест/повторения,
+//  редактирайки шаблона си).
+// =====================================================================
+
+export interface CustomScheduleState {
+  customProgramId: string;
+  nextDayOrder: number; // 1..daysPerWeek, цикличен
+}
+
+async function getOrCreateExerciseId(supabase: SupabaseClient, name: string): Promise<string> {
+  const { data: existing } = await supabase.from("exercises").select("id").eq("name", name).maybeSingle();
+  if (existing) return existing.id;
+
+  const { data: created, error } = await supabase
+    .from("exercises")
+    .insert({ name, category: "accessory" })
+    .select()
+    .single();
+
+  if (error || !created) throw new Error(`Не успяхме да добавим упражнение "${name}".`);
+  return created.id;
+}
+
+async function insertCustomSession(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  customProgramId: string,
+  dayOrder: number,
+  scheduledDate: string
+) {
+  const { data: session, error: sessionError } = await supabase
+    .from("custom_program_sessions")
+    .select("id, session_name")
+    .eq("custom_program_id", customProgramId)
+    .eq("day_order", dayOrder)
+    .single();
+
+  if (sessionError || !session) throw new Error("Не успяхме да намерим тази тренировка от шаблона ти.");
+
+  const { data: templateExercises, error: exercisesError } = await supabase
+    .from("custom_program_exercises")
+    .select("*")
+    .eq("custom_program_session_id", session.id)
+    .order("order_index", { ascending: true });
+
+  if (exercisesError) throw new Error("Не успяхме да заредим упражненията от шаблона ти.");
+
+  const { data: workoutRow, error: workoutError } = await supabase
+    .from("scheduled_workouts")
+    .insert({
+      generated_plan_id: generatedPlanId,
+      scheduled_date: scheduledDate,
+      session_name: session.session_name,
+      status: "planned",
+      is_deload: false,
+      estimated_duration_minutes: (templateExercises?.length ?? 1) * 15,
+    })
+    .select()
+    .single();
+
+  if (workoutError || !workoutRow) throw new Error("Не успяхме да създадем тренировката.");
+
+  let orderIndex = 0;
+  const setsForDb: any[] = [];
+
+  for (const ex of templateExercises ?? []) {
+    const exerciseId = await getOrCreateExerciseId(supabase, ex.exercise_name);
+    for (let i = 0; i < ex.sets; i++) {
+      setsForDb.push({
+        scheduled_workout_id: workoutRow.id,
+        exercise_id: exerciseId,
+        order_index: orderIndex++,
+        set_number: i + 1,
+        set_type: ex.is_amrap && i === ex.sets - 1 ? "amrap" : "working",
+        planned_weight: ex.weight_kg,
+        planned_reps: ex.reps,
+        is_amrap: ex.is_amrap && i === ex.sets - 1,
+        is_paused: false,
+        planned_rest_seconds: ex.rest_seconds ?? 90,
+      });
+    }
+  }
+
+  if (setsForDb.length > 0) {
+    const { error: setsError } = await supabase.from("workout_sets").insert(setsForDb);
+    if (setsError) throw new Error("Не успяхме да запазим сериите.");
+  }
+
+  return workoutRow;
+}
+
+/** Извиква се веднъж, при създаване на плана (в /create-program или /start). */
+export async function createFirstCustomWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  customProgramId: string,
+  scheduledDate: string
+) {
+  const workoutRow = await insertCustomSession(supabase, generatedPlanId, customProgramId, 1, scheduledDate);
+
+  await supabase
+    .from("generated_plans")
+    .update({ settings: { custom_state: { customProgramId, nextDayOrder: 1 } } })
+    .eq("id", generatedPlanId);
+
+  return workoutRow;
+}
+
+/** Извиква се след като потребителят приключи тренировка от /today. */
+export async function completeCustomWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  scheduledWorkoutId: string,
+  state: CustomScheduleState,
+  daysPerWeek: number,
+  nextScheduledDate: string
+) {
+  await supabase.from("scheduled_workouts").update({ status: "completed" }).eq("id", scheduledWorkoutId);
+
+  const newDayOrder = (state.nextDayOrder % daysPerWeek) + 1;
+  const nextWorkoutRow = await insertCustomSession(
+    supabase,
+    generatedPlanId,
+    state.customProgramId,
+    newDayOrder,
+    nextScheduledDate
+  );
+
+  await supabase
+    .from("generated_plans")
+    .update({ settings: { custom_state: { customProgramId: state.customProgramId, nextDayOrder: newDayOrder } } })
+    .eq("id", generatedPlanId);
+
+  return { nextWorkoutRow };
+}
