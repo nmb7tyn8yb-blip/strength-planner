@@ -41,6 +41,8 @@ interface WorkoutSetRow {
   planned_weight: number;
   planned_reps: number;
   order_index: number;
+  is_amrap: boolean;
+  is_paused: boolean;
   exercises: { name: string };
 }
 
@@ -116,7 +118,7 @@ export default function TodayPage() {
 
     const { data: workoutSets } = await supabase
       .from("workout_sets")
-      .select("id, exercise_id, set_type, planned_weight, planned_reps, order_index, exercises(name)")
+      .select("id, exercise_id, set_type, planned_weight, planned_reps, order_index, is_amrap, is_paused, exercises(name)")
       .eq("scheduled_workout_id", nextWorkout.id)
       .order("order_index", { ascending: true });
 
@@ -431,41 +433,33 @@ export default function TodayPage() {
               <div key={name} className="border-2 border-white/15 p-5">
                 <h2 className="font-display text-lg font-semibold">{name}</h2>
 
-                <p className="mt-3 text-xs uppercase tracking-widest text-chalkDim">Загряване</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {exerciseSets
-                    .filter((s) => s.set_type === "warmup")
-                    .map((s) => (
-                      <span key={s.id} className="border border-white/10 px-3 py-1 text-sm text-chalkDim">
+                <div className="mt-4 grid gap-2">
+                  {exerciseSets.map((s) => (
+                    <div key={s.id} className="flex items-center justify-between border border-white/10 px-4 py-3">
+                      <span className="text-chalk">
                         {s.planned_weight} kg × {s.planned_reps}
+                        {s.is_amrap ? "+ (AMRAP)" : ""}
+                        {s.set_type === "test" ? " (проходка)" : ""} (план)
+                        {s.is_paused && (
+                          <span className="ml-2 rounded-sm bg-amber/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber">
+                            Пауза 2-3 сек
+                          </span>
+                        )}
                       </span>
-                    ))}
-                </div>
-
-                <p className="mt-4 text-xs uppercase tracking-widest text-chalkDim">Работни серии</p>
-                <div className="mt-2 grid gap-2">
-                  {exerciseSets
-                    .filter((s) => s.set_type !== "warmup")
-                    .map((s) => (
-                      <div key={s.id} className="flex items-center justify-between border border-white/10 px-4 py-3">
-                        <span className="text-chalk">
-                          {s.planned_weight} kg × {s.planned_reps}
-                          {s.set_type === "amrap" ? "+ (AMRAP)" : ""} (план)
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-chalkDim">Направени:</span>
-                          <input
-                            type="number"
-                            min={0}
-                            value={actualReps[s.id] ?? 0}
-                            onChange={(e) =>
-                              setActualReps({ ...actualReps, [s.id]: Number(e.target.value) })
-                            }
-                            className="w-16 border-2 border-white/15 bg-transparent px-2 py-1 text-center text-chalk focus:border-amber"
-                          />
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-chalkDim">Направени:</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={actualReps[s.id] ?? 0}
+                          onChange={(e) =>
+                            setActualReps({ ...actualReps, [s.id]: Number(e.target.value) })
+                          }
+                          className="w-16 border-2 border-white/15 bg-transparent px-2 py-1 text-center text-chalk focus:border-amber"
+                        />
                       </div>
-                    ))}
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
