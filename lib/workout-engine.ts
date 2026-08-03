@@ -1095,3 +1095,60 @@ export async function completeJuggernautExcelWorkout(
 
   return { newState, nextWorkoutRow };
 }
+
+// =====================================================================
+//  УНИВЕРСАЛЕН ИЗВЛИЧАТЕЛ НА ТЕКУЩИТЕ РАБОТНИ ТЕЖЕСТИ
+//  (за /dashboard — всяка от 8 програмите пази състоянието си различно)
+// =====================================================================
+
+export function getCurrentWorkingWeights(
+  programSlug: string,
+  settings: any
+): Partial<Record<"squat" | "bench_press" | "deadlift" | "overhead_press", number>> | null {
+  try {
+    switch (programSlug) {
+      case "starting-strength": {
+        const lifts = settings.ss_state?.lifts;
+        if (!lifts) return null;
+        return {
+          squat: lifts.squat?.workingWeightKg,
+          bench_press: lifts.bench_press?.workingWeightKg,
+          deadlift: lifts.deadlift?.workingWeightKg,
+          overhead_press: lifts.overhead_press?.workingWeightKg,
+        };
+      }
+      case "531":
+        return settings.wendler_state?.trainingMaxKg ?? null;
+      case "hepburn-a": {
+        const liftStates = settings.hepburn_state?.liftStates;
+        if (!liftStates) return null;
+        return {
+          squat: liftStates.squat?.workingWeightKg,
+          bench_press: liftStates.bench_press?.workingWeightKg,
+          deadlift: liftStates.deadlift?.workingWeightKg,
+          overhead_press: liftStates.overhead_press?.workingWeightKg,
+        };
+      }
+      case "texas-method": {
+        const t = settings.texas_state?.texasState;
+        if (!t) return null;
+        return {
+          squat: t.lastFridaySquatKg,
+          bench_press: t.lastHeavyUpperKg?.bench_press,
+          overhead_press: t.lastHeavyUpperKg?.overhead_press,
+          deadlift: t.currentDeadliftKg,
+        };
+      }
+      case "surovetsky-1":
+      case "surovetsky-2":
+        return { bench_press: settings.surovetsky_state?.currentMaxKg };
+      case "juggernaut":
+      case "juggernaut-excel":
+        return settings.juggernaut_state?.tmKg ?? null;
+      default:
+        return null;
+    }
+  } catch {
+    return null;
+  }
+}
