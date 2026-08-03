@@ -91,6 +91,8 @@ async function insertScheduledSession(
     ...rest,
     scheduled_workout_id: workoutRow.id,
     exercise_id: exerciseIdMap[exercise_slug],
+    is_amrap: false,
+    is_paused: false,
   }));
 
   // В дните без мъртва тяга добавяме набирания — реалната SS програма не
@@ -600,6 +602,8 @@ async function insertTexasSession(
     planned_weight: e.weightKg,
     planned_reps: e.reps,
     planned_rest_seconds: dayType === "intensity" ? 300 : dayType === "volume" ? 240 : 150,
+    is_amrap: false,
+    is_paused: false,
   }));
 
   const { error: setsError } = await supabase.from("workout_sets").insert(setsForDb);
@@ -622,6 +626,7 @@ async function insertTexasSession(
           planned_weight: 0,
           planned_reps: 8,
           is_amrap: true,
+          is_paused: false,
           planned_rest_seconds: 90,
         });
       }
@@ -636,6 +641,8 @@ async function insertTexasSession(
           set_type: "working",
           planned_weight: 0,
           planned_reps: 10,
+          is_amrap: false,
+          is_paused: false,
           planned_rest_seconds: 60,
         });
       }
@@ -652,6 +659,8 @@ async function insertTexasSession(
           set_type: "working",
           planned_weight: 0,
           planned_reps: 3,
+          is_amrap: false,
+          is_paused: false,
           planned_rest_seconds: 90,
         });
       }
