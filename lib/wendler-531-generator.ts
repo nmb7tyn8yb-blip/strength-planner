@@ -92,6 +92,32 @@ export function planWendlerLift(
 }
 
 // ---------------------------------------------------------------------
+// FSL (First Set Last) — най-разпространеният помощен вариант, изрично
+// описан от Wendler: 5×5 на процента на ПЪРВАТА основна серия за
+// седмицата. Пропуска се на разтоварващата седмица (седмица 4) — тя е
+// вече достатъчно лека сама по себе си.
+// ---------------------------------------------------------------------
+
+export function planFSLSets(
+  lift: WendlerLift,
+  state: WendlerState,
+  settings: WendlerSettings
+): WendlerSetPlan[] {
+  if (state.weekNumber === 4) return [];
+
+  const tm = state.trainingMaxKg[lift];
+  const firstSetPct = WEEK_SCHEMES[state.weekNumber][0].pct;
+  const weightKg = roundToIncrement(tm * firstSetPct, settings.roundingIncrementKg);
+
+  return Array.from({ length: 5 }, () => ({
+    pct: firstSetPct,
+    weightKg,
+    reps: 5,
+    isAmrap: false,
+  }));
+}
+
+// ---------------------------------------------------------------------
 // Преход към следваща седмица / нов цикъл с увеличение на TM
 // ---------------------------------------------------------------------
 
