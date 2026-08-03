@@ -806,3 +806,292 @@ export async function completeSurovetskyWorkout(
 export function surovetskyDayOffset(sessionIndexInCycle: number): number {
   return SUROVETSKY_DAY_OFFSETS[sessionIndexInCycle % 3];
 }
+
+// =====================================================================
+//  JUGGERNAUT — adapter (и двата варианта: класически 16-седмичен и
+//  опростен Excel 12-седмичен)
+//
+//  4 вдигания, ротация по ред (Преса→Тяга→Бенч→Клек, като при 5/3/1).
+//  Вълна/седмица е ОБЩА (всички lift-ове минават през нея заедно), но
+//  TM се качва САМО за конкретното вдигане, на неговата собствена
+//  реализационна/AMRAP седмица — не за всичките наведнъж.
+// =====================================================================
+
+import {
+  initJuggernautClassicState,
+  planJuggernautWeek,
+  advanceJuggernautWeek,
+  type JuggernautClassicState,
+  type JuggernautClassicSettings,
+  type JuggernautLift,
+} from "./juggernaut-classic-generator";
+import {
+  initJuggernautExcelState,
+  planJuggernautExcelWeek,
+  advanceJuggernautExcelWeek,
+  calculateTmBump,
+  DEFAULT_JUGGERNAUT_EXCEL_SETTINGS,
+  type JuggernautExcelState,
+  type JuggernautExcelSettings,
+  type WaveName,
+} from "./juggernaut-excel-generator";
+
+const JUGGERNAUT_LIFT_ORDER: JuggernautLift[] = ["overhead_press", "deadlift", "bench_press", "squat"];
+const WAVE_NAMES: WaveName[] = ["10s", "8s", "5s", "3s"];
+
+const DEFAULT_JUGGERNAUT_CLASSIC_SETTINGS: JuggernautClassicSettings = {
+  roundingIncrementKg: 2.5,
+  trainingMaxPercentOf1RM: 0.9,
+  progressionStyle: "standard",
+};
+
+export interface JuggernautScheduleState {
+  waveIndex: number;
+  weekNumber: number; // 1-4 (класически) или 1-3 (Excel)
+  tmKg: Record<JuggernautLift, number>;
+  nextLiftIndex: number;
+}
+
+// ---------------------------------------------------------------------
+// КЛАСИЧЕСКИ ВАРИАНТ
+// ---------------------------------------------------------------------
+
+async function insertJuggernautClassicSession(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  lift: JuggernautLift,
+  state: JuggernautScheduleState,
+  scheduledDate: string
+) {
+  const wave = WAVE_NAMES[state.waveIndex];
+  const sets = planJuggernautWeek(lift, { waveIndex: state.waveIndex, weekNumber: state.weekNumber as any, tmKg: state.tmKg }, DEFAULT_JUGGERNAUT_CLASSIC_SETTINGS);
+  const exerciseIdMap = await getExerciseIdMap(supabase);
+
+  const { data: workoutRow, error: workoutError } = await supabase
+    .from("scheduled_workouts")
+    .insert({
+      generated_plan_id: generatedPlanId,
+      scheduled_date: scheduledDate,
+      session_name: `Вълна ${wave}, седмица ${state.weekNumber} — ${EXERCISE_NAME_BY_SLUG[lift]}`,
+      status: "planned",
+      is_deload: state.weekNumber === 4,
+      estimated_duration_minutes: 50,
+    })
+    .select()
+    .single();
+
+  if (workoutError || !workoutRow) throw new Error("Не успяхме да създадем тренировката.");
+
+  const setsForDb = sets.map((s, i) => ({
+    scheduled_workout_id: workoutRow.id,
+    exercise_id: exerciseIdMap[lift],
+    order_index: i,
+    set_number: i + 1,
+    set_type: s.isAmrap ? "amrap" : "working",
+    planned_weight: s.weightKg,
+    planned_reps: s.reps,
+    is_amrap: s.isAmrap,
+    planned_rest_seconds: 180,
+  }));
+
+  const { error: setsError } = await supabase.from("workout_sets").insert(setsForDb);
+  if (setsError) throw new Error("Не успяхме да запазим сериите.");
+
+  return workoutRow;
+}
+
+export async function createFirstJuggernautClassicWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  oneRepMaxesKg: Record<JuggernautLift, number>,
+  scheduledDate: string
+) {
+  const base = initJuggernautClassicState(oneRepMaxesKg, DEFAULT_JUGGERNAUT_CLASSIC_SETTINGS);
+  const state: JuggernautScheduleState = { waveIndex: base.waveIndex, weekNumber: base.weekNumber, tmKg: base.tmKg, nextLiftIndex: 0 };
+
+  const lift = JUGGERNAUT_LIFT_ORDER[0];
+  const workoutRow = await insertJuggernautClassicSession(supabase, generatedPlanId, lift, state, scheduledDate);
+
+  await supabase
+    .from("generated_plans")
+    .update({ settings: { juggernaut_state: state, juggernaut_variant: "classic" } })
+    .eq("id", generatedPlanId);
+
+  return workoutRow;
+}
+
+export async function completeJuggernautClassicWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  scheduledWorkoutId: string,
+  state: JuggernautScheduleState,
+  amrapRepsAchieved: number | undefined, // подава се само ако седмицата за тази вдигана е 3 (реализация)
+  nextScheduledDate: string
+) {
+  const lift = JUGGERNAUT_LIFT_ORDER[state.nextLiftIndex];
+
+  await supabase.from("scheduled_workouts").update({ status: "completed" }).eq("id", scheduledWorkoutId);
+
+  // TM бонус САМО за тази вдигана, ако е нейната 3-та седмица
+  let updatedTmKg = state.tmKg;
+  if (state.weekNumber === 3 && amrapRepsAchieved !== undefined) {
+    const bumped = advanceJuggernautWeek(
+      lift,
+      { waveIndex: state.waveIndex, weekNumber: 3, tmKg: state.tmKg },
+      DEFAULT_JUGGERNAUT_CLASSIC_SETTINGS,
+      amrapRepsAchieved
+    );
+    updatedTmKg = bumped.tmKg;
+  }
+
+  const newLiftIndex = (state.nextLiftIndex + 1) % JUGGERNAUT_LIFT_ORDER.length;
+  let newWaveIndex = state.waveIndex;
+  let newWeekNumber = state.weekNumber;
+
+  if (newLiftIndex === 0) {
+    // пълен кръг от 4-те вдигания → напредва седмицата/вълната (без TM бонус тук)
+    const advanced = advanceJuggernautWeek(
+      lift,
+      { waveIndex: state.waveIndex, weekNumber: state.weekNumber as any, tmKg: updatedTmKg },
+      DEFAULT_JUGGERNAUT_CLASSIC_SETTINGS
+    );
+    newWaveIndex = advanced.waveIndex;
+    newWeekNumber = advanced.weekNumber;
+  }
+
+  const newState: JuggernautScheduleState = {
+    waveIndex: newWaveIndex,
+    weekNumber: newWeekNumber,
+    tmKg: updatedTmKg,
+    nextLiftIndex: newLiftIndex,
+  };
+
+  const nextLift = JUGGERNAUT_LIFT_ORDER[newLiftIndex];
+  const nextWorkoutRow = await insertJuggernautClassicSession(supabase, generatedPlanId, nextLift, newState, nextScheduledDate);
+
+  await supabase
+    .from("generated_plans")
+    .update({ settings: { juggernaut_state: newState, juggernaut_variant: "classic" } })
+    .eq("id", generatedPlanId);
+
+  return { newState, nextWorkoutRow };
+}
+
+// ---------------------------------------------------------------------
+// EXCEL ВАРИАНТ (опростен, 12 седмици)
+// ---------------------------------------------------------------------
+
+async function insertJuggernautExcelSession(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  lift: JuggernautLift,
+  state: JuggernautScheduleState,
+  scheduledDate: string
+) {
+  const wave = WAVE_NAMES[state.waveIndex];
+  const sets = planJuggernautExcelWeek(lift, { waveIndex: state.waveIndex, weekInWave: state.weekNumber as any, tmKg: state.tmKg }, DEFAULT_JUGGERNAUT_EXCEL_SETTINGS);
+  const exerciseIdMap = await getExerciseIdMap(supabase);
+
+  const { data: workoutRow, error: workoutError } = await supabase
+    .from("scheduled_workouts")
+    .insert({
+      generated_plan_id: generatedPlanId,
+      scheduled_date: scheduledDate,
+      session_name: `Вълна ${wave}, седмица ${state.weekNumber} — ${EXERCISE_NAME_BY_SLUG[lift]}`,
+      status: "planned",
+      is_deload: false,
+      estimated_duration_minutes: 45,
+    })
+    .select()
+    .single();
+
+  if (workoutError || !workoutRow) throw new Error("Не успяхме да създадем тренировката.");
+
+  const setsForDb = sets.map((s, i) => ({
+    scheduled_workout_id: workoutRow.id,
+    exercise_id: exerciseIdMap[lift],
+    order_index: i,
+    set_number: i + 1,
+    set_type: s.isAmrap ? "amrap" : "working",
+    planned_weight: s.weightKg,
+    planned_reps: s.reps,
+    is_amrap: s.isAmrap,
+    planned_rest_seconds: 150,
+  }));
+
+  const { error: setsError } = await supabase.from("workout_sets").insert(setsForDb);
+  if (setsError) throw new Error("Не успяхме да запазим сериите.");
+
+  return workoutRow;
+}
+
+export async function createFirstJuggernautExcelWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  oneRepMaxesKg: Record<JuggernautLift, number>,
+  scheduledDate: string
+) {
+  const base = initJuggernautExcelState(oneRepMaxesKg, DEFAULT_JUGGERNAUT_EXCEL_SETTINGS);
+  const state: JuggernautScheduleState = { waveIndex: base.waveIndex, weekNumber: base.weekInWave, tmKg: base.tmKg, nextLiftIndex: 0 };
+
+  const lift = JUGGERNAUT_LIFT_ORDER[0];
+  const workoutRow = await insertJuggernautExcelSession(supabase, generatedPlanId, lift, state, scheduledDate);
+
+  await supabase
+    .from("generated_plans")
+    .update({ settings: { juggernaut_state: state, juggernaut_variant: "excel" } })
+    .eq("id", generatedPlanId);
+
+  return workoutRow;
+}
+
+export async function completeJuggernautExcelWorkout(
+  supabase: SupabaseClient,
+  generatedPlanId: string,
+  scheduledWorkoutId: string,
+  state: JuggernautScheduleState,
+  amrapRepsAchieved: number | undefined,
+  nextScheduledDate: string
+) {
+  const lift = JUGGERNAUT_LIFT_ORDER[state.nextLiftIndex];
+  const wave = WAVE_NAMES[state.waveIndex];
+
+  await supabase.from("scheduled_workouts").update({ status: "completed" }).eq("id", scheduledWorkoutId);
+
+  let updatedTmKg = state.tmKg;
+  if (state.weekNumber === 3 && amrapRepsAchieved !== undefined) {
+    const bump = calculateTmBump(lift, wave, amrapRepsAchieved, state.tmKg[lift], DEFAULT_JUGGERNAUT_EXCEL_SETTINGS);
+    updatedTmKg = { ...state.tmKg, [lift]: bump.newTmKg };
+  }
+
+  const newLiftIndex = (state.nextLiftIndex + 1) % JUGGERNAUT_LIFT_ORDER.length;
+  let newWaveIndex = state.waveIndex;
+  let newWeekNumber = state.weekNumber;
+
+  if (newLiftIndex === 0) {
+    const advanced = advanceJuggernautExcelWeek(
+      lift,
+      { waveIndex: state.waveIndex, weekInWave: state.weekNumber as any, tmKg: updatedTmKg },
+      DEFAULT_JUGGERNAUT_EXCEL_SETTINGS
+    );
+    newWaveIndex = advanced.waveIndex;
+    newWeekNumber = advanced.weekInWave;
+  }
+
+  const newState: JuggernautScheduleState = {
+    waveIndex: newWaveIndex,
+    weekNumber: newWeekNumber,
+    tmKg: updatedTmKg,
+    nextLiftIndex: newLiftIndex,
+  };
+
+  const nextLift = JUGGERNAUT_LIFT_ORDER[newLiftIndex];
+  const nextWorkoutRow = await insertJuggernautExcelSession(supabase, generatedPlanId, nextLift, newState, nextScheduledDate);
+
+  await supabase
+    .from("generated_plans")
+    .update({ settings: { juggernaut_state: newState, juggernaut_variant: "excel" } })
+    .eq("id", generatedPlanId);
+
+  return { newState, nextWorkoutRow };
+}
