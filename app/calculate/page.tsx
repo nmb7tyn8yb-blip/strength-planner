@@ -71,6 +71,7 @@ const SUPPORTED_PROGRAMS = [
   "texas-method",
   "surovetsky-1",
   "surovetsky-2",
+  "surovetsky-full",
   "juggernaut",
   "juggernaut-excel",
 ];
@@ -260,7 +261,7 @@ function CalculateInner() {
           <TexasMethodResults oneRepMaxes={numericMaxes} />
         )}
 
-        {supported && showResults && (programSlug === "surovetsky-1" || programSlug === "surovetsky-2") && (
+        {supported && showResults && (programSlug === "surovetsky-1" || programSlug === "surovetsky-2" || programSlug === "surovetsky-full") && (
           <SurovetskyResults benchOneRepMax={numericMaxes.bench_press} />
         )}
 
