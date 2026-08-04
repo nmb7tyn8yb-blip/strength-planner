@@ -38,6 +38,9 @@ type Phase = "loading" | "no-plan" | "ready";
 
 export default function DashboardPage() {
   const [phase, setPhase] = useState<Phase>("loading");
+  const [allPlans, setAllPlans] = useState<any[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
+
   const [programName, setProgramName] = useState("");
   const [programSlug, setProgramSlug] = useState("");
   const [howItWorks, setHowItWorks] = useState("");
@@ -50,10 +53,10 @@ export default function DashboardPage() {
   const [showAllPast, setShowAllPast] = useState(false);
 
   useEffect(() => {
-    load();
+    loadPlansList();
   }, []);
 
-  async function load() {
+  async function loadPlansList() {
     setPhase("loading");
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
@@ -64,13 +67,29 @@ export default function DashboardPage() {
 
     const { data: plans } = await supabase
       .from("generated_plans")
-      .select("*, programs(name, slug, detailed_description), custom_programs(id, name)")
+      .select("id, start_date, status, programs(name), custom_programs(name)")
       .eq("user_id", userId)
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(1);
+      .order("created_at", { ascending: false });
 
-    const plan = plans?.[0];
+    if (!plans || plans.length === 0) {
+      setPhase("no-plan");
+      return;
+    }
+
+    setAllPlans(plans);
+    await loadPlanDetails(plans[0].id);
+  }
+
+  async function loadPlanDetails(planId: string) {
+    setPhase("loading");
+    setSelectedPlanId(planId);
+
+    const { data: plan } = await supabase
+      .from("generated_plans")
+      .select("*, programs(name, slug, detailed_description), custom_programs(id, name)")
+      .eq("id", planId)
+      .single();
+
     if (!plan) {
       setPhase("no-plan");
       return;
@@ -94,6 +113,7 @@ export default function DashboardPage() {
       setProgramSlug(plan.programs?.slug ?? "");
       setCurrentWeights(getCurrentWorkingWeights(plan.programs?.slug, plan.settings));
       setHowItWorks(plan.programs?.detailed_description?.how_it_works ?? "");
+      setCustomTemplate([]);
     }
     setStartDate(plan.start_date);
 
@@ -114,6 +134,8 @@ export default function DashboardPage() {
       (h: any) => h.workout_sets?.scheduled_workouts?.generated_plan_id === plan.id
     );
     setHistory(filteredHistory);
+    setShowAllUpcoming(false);
+    setShowAllPast(false);
 
     setPhase("ready");
   }
@@ -128,7 +150,7 @@ export default function DashboardPage() {
   const upcoming = showAllUpcoming ? allUpcoming : allUpcoming.slice(0, 3);
   const past = showAllPast ? allPast : allPast.slice(0, 8);
 
-  if (phase === "loading") {
+  if (phase === "loading" && allPlans.length === 0) {
     return <LoadingScreen label="Зареждаме таблото ти…" />;
   }
 
@@ -146,6 +168,27 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
       <div className="mx-auto max-w-4xl">
+        {/* Избор на план, ако има повече от един */}
+        {allPlans.length > 1 && (
+          <div className="mb-8">
+            <label className="text-xs uppercase tracking-widest text-chalkDim">
+              Твоите планове ({allPlans.length})
+            </label>
+            <select
+              value={selectedPlanId}
+              onChange={(e) => loadPlanDetails(e.target.value)}
+              className="mt-1 w-full border-2 border-white/15 bg-graphite px-4 py-3 text-chalk focus:border-amber"
+            >
+              {allPlans.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.programs?.name ?? p.custom_programs?.name ?? "Програма"} — {p.start_date}
+                  {p.status !== "active" ? ` (${p.status})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
             <h1 className="font-display text-3xl font-semibold">{programName}</h1>
