@@ -552,7 +552,7 @@ export default function TodayPage() {
                         className={`flex items-center justify-between border px-4 py-3 transition-colors ${rowColor}`}
                       >
                         <span className="text-chalk">
-                          {s.planned_weight} kg × {s.planned_reps}
+                          {s.planned_weight > 0 ? `${s.planned_weight} kg × ` : ""}{s.planned_reps}
                           {s.is_amrap ? "+ (AMRAP)" : ""}
                           {s.set_type === "test" ? " (проходка)" : ""} (план)
                           {s.is_paused && (
