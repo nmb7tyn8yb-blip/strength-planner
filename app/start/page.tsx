@@ -51,8 +51,36 @@ function StartPageInner() {
   const [planReady, setPlanReady] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       setStep(data.session ? "profile" : "auth");
+
+      if (data.session?.user) {
+        const { data: maxRows } = await supabase
+          .from("exercise_maxes")
+          .select("one_rep_max, tested_at, exercises(name)")
+          .eq("user_id", data.session.user.id)
+          .order("tested_at", { ascending: false });
+
+        if (maxRows) {
+          const nameToSlug: Record<string, string> = {
+            Клек: "squat",
+            Лежанка: "bench_press",
+            "Мъртва тяга": "deadlift",
+            "Военна преса": "overhead_press",
+          };
+          const latestByLift: Record<string, number> = {};
+          for (const row of maxRows as any[]) {
+            const slug = nameToSlug[row.exercises?.name];
+            if (slug && latestByLift[slug] === undefined) latestByLift[slug] = row.one_rep_max;
+          }
+          setMaxes((prev) => ({
+            squat: prev.squat || (latestByLift.squat ? String(latestByLift.squat) : ""),
+            bench_press: prev.bench_press || (latestByLift.bench_press ? String(latestByLift.bench_press) : ""),
+            deadlift: prev.deadlift || (latestByLift.deadlift ? String(latestByLift.deadlift) : ""),
+            overhead_press: prev.overhead_press || (latestByLift.overhead_press ? String(latestByLift.overhead_press) : ""),
+          }));
+        }
+      }
     });
   }, []);
 
