@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabase-client";
 import {
   calculateTrainingMax,
   planWendlerLift,
@@ -117,6 +118,43 @@ function CalculateInner() {
     deadlift: searchParams.get("deadlift") ?? "",
     overhead_press: searchParams.get("press") ?? "",
   });
+
+  // Ако потребителят вече е логнат и има записани максимуми, ги предзарежда —
+  // за да не се въвеждат наново всеки път (стойности от URL, ако има, имат предимство)
+  useEffect(() => {
+    async function prefillFromAccount() {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+
+      const { data: maxRows } = await supabase
+        .from("exercise_maxes")
+        .select("one_rep_max, tested_at, exercises(name)")
+        .eq("user_id", userData.user.id)
+        .order("tested_at", { ascending: false });
+
+      if (!maxRows) return;
+
+      const nameToSlug: Record<string, WendlerLift> = {
+        Клек: "squat",
+        Лежанка: "bench_press",
+        "Мъртва тяга": "deadlift",
+        "Военна преса": "overhead_press",
+      };
+      const latestByLift: Partial<Record<WendlerLift, number>> = {};
+      for (const row of maxRows as any[]) {
+        const slug = nameToSlug[row.exercises?.name];
+        if (slug && latestByLift[slug] === undefined) latestByLift[slug] = row.one_rep_max;
+      }
+
+      setMaxes((prev) => ({
+        squat: prev.squat || (latestByLift.squat ? String(latestByLift.squat) : ""),
+        bench_press: prev.bench_press || (latestByLift.bench_press ? String(latestByLift.bench_press) : ""),
+        deadlift: prev.deadlift || (latestByLift.deadlift ? String(latestByLift.deadlift) : ""),
+        overhead_press: prev.overhead_press || (latestByLift.overhead_press ? String(latestByLift.overhead_press) : ""),
+      }));
+    }
+    prefillFromAccount();
+  }, []);
   const [showResults, setShowResults] = useState(false);
 
   function handleCalculate(e: React.FormEvent) {
