@@ -217,7 +217,7 @@ function StartPageInner() {
             firstWorkoutCreated = true;
           }
 
-          if (plan && (programSlug === "surovetsky-1" || programSlug === "surovetsky-2")) {
+          if (plan && (programSlug === "surovetsky-1" || programSlug === "surovetsky-2" || programSlug === "surovetsky-full")) {
             await createFirstSurovetskyWorkout(supabase, plan.id, Number(maxes.bench_press) || 60, startDate);
             firstWorkoutCreated = true;
           }
