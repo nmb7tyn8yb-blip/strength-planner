@@ -113,6 +113,7 @@ export default function TodayPage() {
           "texas-method",
           "surovetsky-1",
           "surovetsky-2",
+          "surovetsky-full",
           "juggernaut",
           "juggernaut-excel",
         ].includes(activePlan.programs?.slug)
@@ -178,7 +179,7 @@ export default function TodayPage() {
       return;
     }
 
-    if (programSlug === "surovetsky-1" || programSlug === "surovetsky-2") {
+    if (programSlug === "surovetsky-1" || programSlug === "surovetsky-2" || programSlug === "surovetsky-full") {
       await handleFinishSurovetsky();
       return;
     }
