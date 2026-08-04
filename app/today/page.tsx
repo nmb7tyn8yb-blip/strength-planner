@@ -541,12 +541,51 @@ export default function TodayPage() {
 
         {phase === "workout" && (
           <div className="mt-8 grid gap-8">
+            {(() => {
+              const totalSets = sets.length;
+              const doneSets = sets.filter((s) => {
+                const achieved = actualReps[s.id] ?? 0;
+                return s.is_amrap || s.set_type === "test" ? achieved > 0 : achieved >= s.planned_reps;
+              }).length;
+              const pct = totalSets > 0 ? Math.round((doneSets / totalSets) * 100) : 0;
+              return (
+                <div>
+                  <div className="flex items-center justify-between text-xs uppercase tracking-widest text-chalkDim">
+                    <span>Прогрес на тренировката</span>
+                    <span>
+                      {doneSets} / {totalSets} серии
+                    </span>
+                  </div>
+                  <div className="mt-2 h-1.5 w-full bg-white/10">
+                    <div
+                      className="h-1.5 bg-amber transition-all duration-500 ease-out"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
             {Object.entries(exerciseGroups).map(([name, exerciseSets]) => (
               <div key={name} className="border border-white/10">
-                <div className="border-b border-white/10 bg-white/[0.03] px-5 py-3">
+                <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-5 py-3">
                   <h2 className="font-display text-base font-semibold uppercase tracking-wide text-chalk">
                     {name}
                   </h2>
+                  <div className="flex gap-1">
+                    {exerciseSets.map((s) => {
+                      const achieved = actualReps[s.id] ?? 0;
+                      const done = s.is_amrap || s.set_type === "test" ? achieved > 0 : achieved >= s.planned_reps;
+                      return (
+                        <span
+                          key={s.id}
+                          className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                            done ? "scale-125 bg-green-500" : "bg-white/15"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className="divide-y divide-white/5">
