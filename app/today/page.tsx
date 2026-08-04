@@ -146,7 +146,7 @@ export default function TodayPage() {
 
     const setsData = (workoutSets as unknown as WorkoutSetRow[]) ?? [];
     setSets(setsData);
-    setActualReps(Object.fromEntries(setsData.map((s) => [s.id, s.planned_reps])));
+    setActualReps(Object.fromEntries(setsData.map((s) => [s.id, 0])));
     const heaviestSet = setsData.reduce((max, s) => (s.planned_weight > max ? s.planned_weight : max), 0);
     setConfirmedMax(String(heaviestSet));
     setPhase("workout");
@@ -633,7 +633,23 @@ export default function TodayPage() {
                         </div>
 
                         <div className="flex shrink-0 items-center gap-2">
-                          {met && <span className="text-lg text-green-500">✓</span>}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActualReps({
+                                ...actualReps,
+                                [s.id]: met ? 0 : s.planned_reps,
+                              })
+                            }
+                            className={`flex h-10 w-10 items-center justify-center border-2 text-lg font-bold transition-all ${
+                              met
+                                ? "border-green-600 bg-green-600/20 text-green-500"
+                                : "border-white/15 text-transparent hover:border-amber hover:text-amber/50"
+                            }`}
+                            title={met ? "Отбелязано по план — кликни за отмяна" : "Отбележи като изпълнена по план"}
+                          >
+                            ✓
+                          </button>
                           <button
                             type="button"
                             onClick={() => setActualReps({ ...actualReps, [s.id]: Math.max(0, achieved - 1) })}
