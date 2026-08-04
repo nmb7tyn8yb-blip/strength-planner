@@ -40,10 +40,14 @@ export default function DashboardPage() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [programName, setProgramName] = useState("");
   const [programSlug, setProgramSlug] = useState("");
+  const [howItWorks, setHowItWorks] = useState("");
   const [startDate, setStartDate] = useState("");
   const [currentWeights, setCurrentWeights] = useState<Record<string, number | undefined> | null>(null);
   const [workouts, setWorkouts] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
+  const [customTemplate, setCustomTemplate] = useState<any[]>([]);
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
+  const [showAllPast, setShowAllPast] = useState(false);
 
   useEffect(() => {
     load();
@@ -60,7 +64,7 @@ export default function DashboardPage() {
 
     const { data: plans } = await supabase
       .from("generated_plans")
-      .select("*, programs(name, slug), custom_programs(name)")
+      .select("*, programs(name, slug, detailed_description), custom_programs(id, name)")
       .eq("user_id", userId)
       .eq("status", "active")
       .order("created_at", { ascending: false })
@@ -76,10 +80,20 @@ export default function DashboardPage() {
       setProgramName(plan.custom_programs?.name ?? "Моята програма");
       setProgramSlug("");
       setCurrentWeights(null);
+      setHowItWorks("");
+
+      const { data: templateSessions } = await supabase
+        .from("custom_program_sessions")
+        .select("id, day_order, session_name, custom_program_exercises(order_index, exercise_name, sets, reps, weight_kg)")
+        .eq("custom_program_id", plan.custom_program_id)
+        .order("day_order", { ascending: true });
+
+      setCustomTemplate(templateSessions ?? []);
     } else {
       setProgramName(plan.programs?.name ?? "");
       setProgramSlug(plan.programs?.slug ?? "");
       setCurrentWeights(getCurrentWorkingWeights(plan.programs?.slug, plan.settings));
+      setHowItWorks(plan.programs?.detailed_description?.how_it_works ?? "");
     }
     setStartDate(plan.start_date);
 
@@ -94,7 +108,7 @@ export default function DashboardPage() {
       .from("completed_sets")
       .select("actual_weight, actual_reps, completed_at, workout_sets(exercises(name), scheduled_workouts(generated_plan_id))")
       .order("completed_at", { ascending: false })
-      .limit(15);
+      .limit(30);
 
     const filteredHistory = (historyRows ?? []).filter(
       (h: any) => h.workout_sets?.scheduled_workouts?.generated_plan_id === plan.id
@@ -109,8 +123,10 @@ export default function DashboardPage() {
   const totalDone = completedCount + partialCount;
   const successRate = totalDone > 0 ? Math.round((completedCount / totalDone) * 100) : null;
 
-  const upcoming = workouts.filter((w) => w.status === "planned").slice(0, 3);
-  const past = workouts.filter((w) => w.status !== "planned").slice(-8).reverse();
+  const allUpcoming = workouts.filter((w) => w.status === "planned");
+  const allPast = [...workouts.filter((w) => w.status !== "planned")].reverse();
+  const upcoming = showAllUpcoming ? allUpcoming : allUpcoming.slice(0, 3);
+  const past = showAllPast ? allPast : allPast.slice(0, 8);
 
   if (phase === "loading") {
     return <LoadingScreen label="Зареждаме таблото ти…" />;
@@ -175,14 +191,59 @@ export default function DashboardPage() {
             <p className="mt-1 text-xs uppercase tracking-widest text-chalkDim">Успеваемост</p>
           </div>
           <div className="bg-graphite p-5 text-center">
-            <p className="font-display text-3xl font-bold text-chalk">{upcoming.length}</p>
+            <p className="font-display text-3xl font-bold text-chalk">{allUpcoming.length}</p>
             <p className="mt-1 text-xs uppercase tracking-widest text-chalkDim">Предстоящи</p>
           </div>
         </div>
 
+        {/* Структура на програмата */}
+        {(howItWorks || customTemplate.length > 0) && (
+          <div className="mt-10">
+            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
+              Структура на програмата
+            </h2>
+
+            {howItWorks && (
+              <p className="mt-3 border border-white/10 p-5 text-sm leading-relaxed text-chalk">{howItWorks}</p>
+            )}
+
+            {customTemplate.length > 0 && (
+              <div className="mt-3 grid gap-3">
+                {customTemplate.map((session) => (
+                  <div key={session.id} className="border border-white/10 p-4">
+                    <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-amber">
+                      {session.session_name}
+                    </h3>
+                    <ul className="mt-2 grid gap-1">
+                      {(session.custom_program_exercises ?? [])
+                        .sort((a: any, b: any) => a.order_index - b.order_index)
+                        .map((ex: any, i: number) => (
+                          <li key={i} className="text-sm text-chalkDim">
+                            {ex.exercise_name} — {ex.sets}×{ex.reps}
+                            {ex.weight_kg > 0 ? ` @ ${ex.weight_kg} kg` : ""}
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Предстоящи тренировки */}
         <div className="mt-10">
-          <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">Предстоящи</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">Предстоящи</h2>
+            {allUpcoming.length > 3 && (
+              <button
+                onClick={() => setShowAllUpcoming(!showAllUpcoming)}
+                className="text-xs text-steelLight underline-offset-4 hover:underline"
+              >
+                {showAllUpcoming ? "Скрий" : `Виж всички (${allUpcoming.length})`}
+              </button>
+            )}
+          </div>
           <div className="mt-3 grid gap-2">
             {upcoming.length === 0 && <p className="text-sm text-chalkDim">Няма насрочени тренировки.</p>}
             {upcoming.map((w) => (
@@ -199,7 +260,17 @@ export default function DashboardPage() {
 
         {/* Изминали тренировки */}
         <div className="mt-10">
-          <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">Последни тренировки</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">Последни тренировки</h2>
+            {allPast.length > 8 && (
+              <button
+                onClick={() => setShowAllPast(!showAllPast)}
+                className="text-xs text-steelLight underline-offset-4 hover:underline"
+              >
+                {showAllPast ? "Скрий" : `Виж всички (${allPast.length})`}
+              </button>
+            )}
+          </div>
           <div className="mt-3 grid gap-2">
             {past.length === 0 && <p className="text-sm text-chalkDim">Още нямаш изиграни тренировки.</p>}
             {past.map((w) => (
