@@ -606,20 +606,23 @@ export default function TodayPage() {
 
                         <div className="flex-1">
                           <div className="flex items-baseline gap-2">
-                            {s.planned_weight > 0 ? (
-                              <span className="font-display text-2xl font-bold text-chalk">
-                                {s.planned_weight}
-                                <span className="ml-1 text-sm font-normal text-chalkDim">kg</span>
-                              </span>
-                            ) : (
-                              <span className="font-display text-lg font-semibold text-chalkDim">Без тежест</span>
+                            {s.planned_weight > 0 && (
+                              <>
+                                <span className="font-display text-2xl font-bold text-chalk">
+                                  {s.planned_weight}
+                                  <span className="ml-1 text-sm font-normal text-chalkDim">kg</span>
+                                </span>
+                                <span className="text-chalkDim">×</span>
+                              </>
                             )}
-                            <span className="text-chalkDim">×</span>
                             <span className="font-display text-xl font-semibold text-chalk">
                               {s.planned_reps}
                               {s.is_amrap && "+"}
                             </span>
                           </div>
+                          {s.planned_weight === 0 && (
+                            <span className="text-xs text-chalkDim">повторения</span>
+                          )}
                           {(s.set_type === "test" || s.is_paused) && (
                             <div className="mt-1 flex gap-2">
                               {s.set_type === "test" && (
