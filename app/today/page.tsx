@@ -64,6 +64,7 @@ export default function TodayPage() {
   const [workout, setWorkout] = useState<any>(null);
   const [sets, setSets] = useState<WorkoutSetRow[]>([]);
   const [actualReps, setActualReps] = useState<Record<string, number>>({});
+  const [actualWeights, setActualWeights] = useState<Record<string, number>>({});
   const [failureReason, setFailureReason] = useState("weight_too_high");
   const [confirmedMax, setConfirmedMax] = useState("");
   const [nextDate, setNextDate] = useState<string | null>(null);
@@ -216,7 +217,7 @@ export default function TodayPage() {
         .filter((s) => s.set_type === "working")
         .map((s) => ({
           workout_set_id: s.id,
-          actual_weight: s.planned_weight,
+          actual_weight: actualWeights[s.id] || s.planned_weight,
           actual_reps: actualReps[s.id] ?? 0,
         }));
       if (completedRows.length > 0) {
@@ -250,7 +251,7 @@ export default function TodayPage() {
 
       const completedRows = sets.map((s) => ({
         workout_set_id: s.id,
-        actual_weight: s.planned_weight,
+        actual_weight: actualWeights[s.id] || s.planned_weight,
         actual_reps: actualReps[s.id] ?? 0,
       }));
       if (completedRows.length > 0) {
@@ -295,7 +296,7 @@ export default function TodayPage() {
         .filter((s) => s.set_type === "working" || s.set_type === "amrap")
         .map((s) => ({
           workout_set_id: s.id,
-          actual_weight: s.planned_weight,
+          actual_weight: actualWeights[s.id] || s.planned_weight,
           actual_reps: actualReps[s.id] ?? 0,
         }));
       if (completedRows.length > 0) {
@@ -332,7 +333,7 @@ export default function TodayPage() {
         .filter((s) => s.set_type !== "warmup")
         .map((s) => ({
           workout_set_id: s.id,
-          actual_weight: s.planned_weight,
+          actual_weight: actualWeights[s.id] || s.planned_weight,
           actual_reps: actualReps[s.id] ?? 0,
         }));
       if (completedRows.length > 0) {
@@ -378,7 +379,7 @@ export default function TodayPage() {
 
       const completedRows = sets.map((s) => ({
         workout_set_id: s.id,
-        actual_weight: s.planned_weight,
+        actual_weight: actualWeights[s.id] || s.planned_weight,
         actual_reps: actualReps[s.id] ?? 0,
       }));
       if (completedRows.length > 0) {
@@ -424,7 +425,7 @@ export default function TodayPage() {
         .filter((s) => s.set_type === "working")
         .map((s) => ({
           workout_set_id: s.id,
-          actual_weight: s.planned_weight,
+          actual_weight: actualWeights[s.id] || s.planned_weight,
           actual_reps: actualReps[s.id] ?? 0,
         }));
       if (completedRows.length > 0) {
@@ -459,7 +460,7 @@ export default function TodayPage() {
 
       const completedRows = sets.map((s) => ({
         workout_set_id: s.id,
-        actual_weight: s.planned_weight,
+        actual_weight: actualWeights[s.id] || s.planned_weight,
         actual_reps: actualReps[s.id] ?? 0,
       }));
       if (completedRows.length > 0) {
@@ -621,7 +622,21 @@ export default function TodayPage() {
                             </span>
                           </div>
                           {s.planned_weight === 0 && (
-                            <span className="text-xs text-chalkDim">повторения</span>
+                            <div className="mt-1 flex items-center gap-2">
+                              <span className="text-xs text-chalkDim">С колко кг?</span>
+                              <input
+                                type="number"
+                                min={0}
+                                step={0.5}
+                                value={actualWeights[s.id] ?? ""}
+                                onChange={(e) =>
+                                  setActualWeights({ ...actualWeights, [s.id]: Number(e.target.value) || 0 })
+                                }
+                                placeholder="напр. 20"
+                                className="w-16 border border-white/15 bg-transparent px-2 py-1 text-center text-xs text-chalk placeholder:text-chalkDim/50 focus:border-amber"
+                              />
+                              <span className="text-xs text-chalkDim">kg (по избор)</span>
+                            </div>
                           )}
                           {(s.set_type === "test" || s.is_paused) && (
                             <div className="mt-1 flex gap-2">
