@@ -520,6 +520,12 @@ export default function TodayPage() {
             Следващата ти тренировка е насрочена за <strong className="text-chalk">{nextDate}</strong>,
             изчислена спрямо резултата ти днес.
           </p>
+          <button
+            onClick={loadWorkout}
+            className="mt-8 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
+          >
+            Виж следващата тренировка →
+          </button>
         </div>
       </main>
     );
@@ -536,38 +542,63 @@ export default function TodayPage() {
         {phase === "workout" && (
           <div className="mt-8 grid gap-8">
             {Object.entries(exerciseGroups).map(([name, exerciseSets]) => (
-              <div key={name} className="border-2 border-white/15 p-5">
-                <h2 className="font-display text-lg font-semibold">{name}</h2>
+              <div key={name} className="border border-white/10">
+                <div className="border-b border-white/10 bg-white/[0.03] px-5 py-3">
+                  <h2 className="font-display text-base font-semibold uppercase tracking-wide text-chalk">
+                    {name}
+                  </h2>
+                </div>
 
-                <div className="mt-4 grid gap-2">
-                  {exerciseSets.map((s) => {
+                <div className="divide-y divide-white/5">
+                  {exerciseSets.map((s, i) => {
                     const achieved = actualReps[s.id] ?? 0;
                     const isAmrapOrTest = s.is_amrap || s.set_type === "test";
                     const met = isAmrapOrTest ? achieved > 0 : achieved >= s.planned_reps;
-                    const rowColor = met ? "border-green-700/50" : achieved === 0 ? "border-white/10" : "border-amber/50";
+                    const rowAccent = met ? "border-l-green-600" : achieved === 0 ? "border-l-transparent" : "border-l-amber";
 
                     return (
                       <div
                         key={s.id}
-                        className={`flex items-center justify-between border px-4 py-3 transition-colors ${rowColor}`}
+                        className={`flex items-center gap-4 border-l-4 px-5 py-4 transition-colors ${rowAccent}`}
                       >
-                        <span className="text-chalk">
-                          {s.planned_weight > 0 ? `${s.planned_weight} kg × ` : ""}{s.planned_reps}
-                          {s.is_amrap ? "+ (AMRAP)" : ""}
-                          {s.set_type === "test" ? " (проходка)" : ""} (план)
-                          {s.is_paused && (
-                            <span className="ml-2 rounded-sm bg-amber/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber">
-                              Пауза 2-3 сек
-                            </span>
-                          )}
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-white/15 font-display text-xs font-bold text-chalkDim">
+                          {i + 1}
                         </span>
-                        <div className="flex items-center gap-2">
-                          {met && <span className="text-green-500">✓</span>}
-                          <span className="text-sm text-chalkDim">Направени:</span>
+
+                        <div className="flex-1">
+                          <div className="flex items-baseline gap-2">
+                            {s.planned_weight > 0 ? (
+                              <span className="font-display text-2xl font-bold text-chalk">
+                                {s.planned_weight}
+                                <span className="ml-1 text-sm font-normal text-chalkDim">kg</span>
+                              </span>
+                            ) : (
+                              <span className="font-display text-lg font-semibold text-chalkDim">Без тежест</span>
+                            )}
+                            <span className="text-chalkDim">×</span>
+                            <span className="font-display text-xl font-semibold text-chalk">
+                              {s.planned_reps}
+                              {s.is_amrap && "+"}
+                            </span>
+                          </div>
+                          {(s.set_type === "test" || s.is_paused) && (
+                            <div className="mt-1 flex gap-2">
+                              {s.set_type === "test" && (
+                                <span className="text-xs uppercase tracking-wide text-steelLight">Проходка</span>
+                              )}
+                              {s.is_paused && (
+                                <span className="text-xs uppercase tracking-wide text-amber">Пауза 2-3 сек</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex shrink-0 items-center gap-2">
+                          {met && <span className="text-lg text-green-500">✓</span>}
                           <button
                             type="button"
                             onClick={() => setActualReps({ ...actualReps, [s.id]: Math.max(0, achieved - 1) })}
-                            className="h-7 w-7 border border-white/15 text-chalkDim transition hover:border-amber hover:text-amber"
+                            className="h-8 w-8 border border-white/15 text-chalkDim transition hover:border-amber hover:text-amber"
                           >
                             −
                           </button>
@@ -576,12 +607,12 @@ export default function TodayPage() {
                             min={0}
                             value={achieved}
                             onChange={(e) => setActualReps({ ...actualReps, [s.id]: Number(e.target.value) })}
-                            className="w-14 border-2 border-white/15 bg-transparent px-2 py-1 text-center text-chalk focus:border-amber"
+                            className="w-14 border-2 border-white/15 bg-transparent py-1.5 text-center font-display text-lg font-semibold text-chalk focus:border-amber"
                           />
                           <button
                             type="button"
                             onClick={() => setActualReps({ ...actualReps, [s.id]: achieved + 1 })}
-                            className="h-7 w-7 border border-white/15 text-chalkDim transition hover:border-amber hover:text-amber"
+                            className="h-8 w-8 border border-white/15 text-chalkDim transition hover:border-amber hover:text-amber"
                           >
                             +
                           </button>
