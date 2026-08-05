@@ -4,6 +4,8 @@ import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
+import { useUnit } from "@/components/unit-provider";
+import { displayWeight, inputToKg, type WeightUnit } from "@/lib/units";
 import {
   calculateTrainingMax,
   planWendlerLift,
@@ -108,6 +110,7 @@ export default function CalculatePage() {
 }
 
 function CalculateInner() {
+  const { unit } = useUnit();
   const searchParams = useSearchParams();
   const programSlug = searchParams.get("program") ?? "";
   const supported = SUPPORTED_PROGRAMS.includes(programSlug);
@@ -249,7 +252,7 @@ function CalculateInner() {
                 <div key={lift.key}>
                   <div className="flex items-baseline justify-between">
                     <label className="text-xs uppercase tracking-widest text-chalkDim">
-                      {lift.label} — {inputLabel} (kg)
+                      {lift.label} — {inputLabel} ({unit})
                     </label>
                     <Link
                       href={`/1rm-calculator?lift=${lift.key}&returnTo=${encodeURIComponent(
@@ -266,8 +269,10 @@ function CalculateInner() {
                     step={0.5}
                     required
                     placeholder="напр. 60"
-                    value={maxes[lift.key]}
-                    onChange={(e) => setMaxes({ ...maxes, [lift.key]: e.target.value })}
+                    value={maxes[lift.key] ? displayWeight(Number(maxes[lift.key]), unit) : ""}
+                    onChange={(e) =>
+                      setMaxes({ ...maxes, [lift.key]: String(inputToKg(Number(e.target.value) || 0, unit)) })
+                    }
                     className="mt-1 w-full border-2 border-white/15 bg-transparent px-4 py-3 text-chalk placeholder:text-chalkDim focus:border-amber"
                   />
                 </div>
@@ -284,31 +289,31 @@ function CalculateInner() {
         )}
 
         {supported && showResults && programSlug === "531" && (
-          <Wendler531Results numericMaxes={numericMaxes} />
+          <Wendler531Results numericMaxes={numericMaxes} unit={unit} />
         )}
 
         {supported && showResults && programSlug === "starting-strength" && (
-          <StartingStrengthResults numericMaxes={effectiveStartingWeights} wasReduced={isStartingStrength} />
+          <StartingStrengthResults numericMaxes={effectiveStartingWeights} wasReduced={isStartingStrength} unit={unit} />
         )}
 
         {supported && showResults && programSlug === "hepburn-a" && (
-          <HepburnResults startingWeights={effectiveStartingWeights} />
+          <HepburnResults startingWeights={effectiveStartingWeights} unit={unit} />
         )}
 
         {supported && showResults && programSlug === "texas-method" && (
-          <TexasMethodResults oneRepMaxes={numericMaxes} />
+          <TexasMethodResults oneRepMaxes={numericMaxes} unit={unit} />
         )}
 
         {supported && showResults && (programSlug === "surovetsky-1" || programSlug === "surovetsky-2" || programSlug === "surovetsky-full") && (
-          <SurovetskyResults benchOneRepMax={numericMaxes.bench_press} />
+          <SurovetskyResults benchOneRepMax={numericMaxes.bench_press} unit={unit} />
         )}
 
         {supported && showResults && programSlug === "juggernaut" && (
-          <JuggernautResults oneRepMaxes={numericMaxes} variant="classic" />
+          <JuggernautResults oneRepMaxes={numericMaxes} variant="classic" unit={unit} />
         )}
 
         {supported && showResults && programSlug === "juggernaut-excel" && (
-          <JuggernautResults oneRepMaxes={numericMaxes} variant="excel" />
+          <JuggernautResults oneRepMaxes={numericMaxes} variant="excel" unit={unit} />
         )}
 
         {supported && showResults && (
@@ -333,7 +338,7 @@ function CalculateInner() {
   );
 }
 
-function Wendler531Results({ numericMaxes }: { numericMaxes: Record<WendlerLift, number> }) {
+function Wendler531Results({ numericMaxes, unit }: { numericMaxes: Record<WendlerLift, number>; unit: WeightUnit }) {
   return (
     <div className="mt-10">
       <h2 className="font-display text-xl font-semibold">Седмица 1 — твоят план</h2>
@@ -358,14 +363,14 @@ function Wendler531Results({ numericMaxes }: { numericMaxes: Record<WendlerLift,
             <div key={lift.key} className="border-2 border-white/15 p-5">
               <div className="flex items-baseline justify-between">
                 <h3 className="font-display text-lg font-semibold">{lift.label}</h3>
-                <span className="text-sm text-chalkDim">TM: {tm} kg</span>
+                <span className="text-sm text-chalkDim">TM: {displayWeight(tm, unit)} {unit}</span>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-3">
                 {sets.map((set, i) => (
                   <div key={i} className="border border-white/10 p-3 text-center">
                     <div className="font-display text-2xl font-bold text-steelLight">
-                      {set.weightKg}
-                      <span className="text-xs text-chalkDim"> kg</span>
+                      {displayWeight(set.weightKg, unit)}
+                      <span className="text-xs text-chalkDim"> {unit}</span>
                     </div>
                     <div className="mt-1 text-sm text-chalkDim">
                       {set.reps}
@@ -381,7 +386,7 @@ function Wendler531Results({ numericMaxes }: { numericMaxes: Record<WendlerLift,
                   <div className="mt-2 grid grid-cols-5 gap-2">
                     {fslSets.map((set, i) => (
                       <div key={i} className="border border-white/10 p-2 text-center">
-                        <div className="font-display text-sm font-bold text-steelLight">{set.weightKg}</div>
+                        <div className="font-display text-sm font-bold text-steelLight">{displayWeight(set.weightKg, unit)}</div>
                         <div className="text-xs text-chalkDim">×{set.reps}</div>
                       </div>
                     ))}
@@ -399,9 +404,11 @@ function Wendler531Results({ numericMaxes }: { numericMaxes: Record<WendlerLift,
 function StartingStrengthResults({
   numericMaxes,
   wasReduced,
+  unit,
 }: {
   numericMaxes: Record<WendlerLift, number>;
   wasReduced: boolean;
+  unit: WeightUnit;
 }) {
   const state = initStartingStrengthState({
     squat: numericMaxes.squat,
@@ -434,7 +441,7 @@ function StartingStrengthResults({
             <div className="mt-2 flex flex-wrap gap-2">
               {exercise.warmupSets.map((w, i) => (
                 <span key={i} className="border border-white/10 px-3 py-1 text-sm text-chalkDim">
-                  {w.weightKg} kg × {w.reps}
+                  {displayWeight(w.weightKg, unit)} {unit} × {w.reps}
                 </span>
               ))}
             </div>
@@ -444,8 +451,8 @@ function StartingStrengthResults({
               {exercise.workingSets.map((w, i) => (
                 <div key={i} className="border border-white/10 p-3 text-center">
                   <div className="font-display text-2xl font-bold text-steelLight">
-                    {w.weightKg}
-                    <span className="text-xs text-chalkDim"> kg</span>
+                    {displayWeight(w.weightKg, unit)}
+                    <span className="text-xs text-chalkDim"> {unit}</span>
                   </div>
                   <div className="mt-1 text-sm text-chalkDim">{w.reps} повт.</div>
                 </div>
@@ -458,7 +465,7 @@ function StartingStrengthResults({
   );
 }
 
-function HepburnResults({ startingWeights }: { startingWeights: Record<WendlerLift, number> }) {
+function HepburnResults({ startingWeights, unit }: { startingWeights: Record<WendlerLift, number>; unit: WeightUnit }) {
   return (
     <div className="mt-10">
       <h2 className="font-display text-xl font-semibold">Седмица 1 — 1×3 + 7×2</h2>
@@ -481,7 +488,7 @@ function HepburnResults({ startingWeights }: { startingWeights: Record<WendlerLi
               <div className="flex items-baseline justify-between">
                 <h3 className="font-display text-lg font-semibold">{LIFT_LABEL_BG[lift.key]}</h3>
                 <span className="text-sm text-chalkDim">
-                  +{DEFAULT_HEPBURN_INCREMENTS_KG[lift.key as HepburnLift]} kg след 8×3
+                  +{displayWeight(DEFAULT_HEPBURN_INCREMENTS_KG[lift.key as HepburnLift], unit)} {unit} след 8×3
                 </span>
               </div>
 
@@ -489,18 +496,18 @@ function HepburnResults({ startingWeights }: { startingWeights: Record<WendlerLi
               <div className="mt-2 flex flex-wrap gap-2">
                 {warmup.map((w, i) => (
                   <span key={i} className="border border-white/10 px-3 py-1 text-sm text-chalkDim">
-                    {w.weightKg} kg × {w.reps}
+                    {displayWeight(w.weightKg, unit)} {unit} × {w.reps}
                   </span>
                 ))}
               </div>
 
               <p className="mt-4 text-xs uppercase tracking-widest text-chalkDim">
-                Работни серии тази седмица (1×3 + 7×2 — {startWeight} kg)
+                Работни серии тази седмица (1×3 + 7×2 — {displayWeight(startWeight, unit)} {unit})
               </p>
               <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-8">
                 {workingSets.map((set, i) => (
                   <div key={i} className="border border-white/10 p-2 text-center">
-                    <div className="font-display text-sm font-bold text-steelLight">{set.weightKg}</div>
+                    <div className="font-display text-sm font-bold text-steelLight">{displayWeight(set.weightKg, unit)}</div>
                     <div className="text-xs text-chalkDim">×{set.reps}</div>
                   </div>
                 ))}
@@ -513,7 +520,7 @@ function HepburnResults({ startingWeights }: { startingWeights: Record<WendlerLi
   );
 }
 
-function TexasMethodResults({ oneRepMaxes }: { oneRepMaxes: Record<WendlerLift, number> }) {
+function TexasMethodResults({ oneRepMaxes, unit }: { oneRepMaxes: Record<WendlerLift, number>; unit: WeightUnit }) {
   // Texas Method иска "текущ 5RM или работна тежест" (документирано в оригинала) —
   // оценяваме 5RM от 1RM по формулата на Brzycki (~89%), без допълнителен запас.
   const estimate5RM = (max: number) => Math.round((max * (32 / 36)) / 2.5) * 2.5;
@@ -540,7 +547,7 @@ function TexasMethodResults({ oneRepMaxes }: { oneRepMaxes: Record<WendlerLift, 
           <div className="mt-3 grid grid-cols-5 gap-2">
             {plan.squat.map((s, i) => (
               <div key={i} className="border border-white/10 p-2 text-center">
-                <div className="font-display text-sm font-bold text-steelLight">{s.weightKg}</div>
+                <div className="font-display text-sm font-bold text-steelLight">{displayWeight(s.weightKg, unit)}</div>
                 <div className="text-xs text-chalkDim">×{s.reps}</div>
               </div>
             ))}
@@ -551,7 +558,7 @@ function TexasMethodResults({ oneRepMaxes }: { oneRepMaxes: Record<WendlerLift, 
           <div className="mt-3 grid grid-cols-5 gap-2">
             {plan.heavyUpperLift.sets.map((s, i) => (
               <div key={i} className="border border-white/10 p-2 text-center">
-                <div className="font-display text-sm font-bold text-steelLight">{s.weightKg}</div>
+                <div className="font-display text-sm font-bold text-steelLight">{displayWeight(s.weightKg, unit)}</div>
                 <div className="text-xs text-chalkDim">×{s.reps}</div>
               </div>
             ))}
@@ -561,7 +568,7 @@ function TexasMethodResults({ oneRepMaxes }: { oneRepMaxes: Record<WendlerLift, 
           <h3 className="font-display text-lg font-semibold">Мъртва тяга</h3>
           <div className="mt-3 grid grid-cols-1 gap-2 w-24">
             <div className="border border-white/10 p-2 text-center">
-              <div className="font-display text-sm font-bold text-steelLight">{state.currentDeadliftKg}</div>
+              <div className="font-display text-sm font-bold text-steelLight">{displayWeight(state.currentDeadliftKg, unit)}</div>
               <div className="text-xs text-chalkDim">×5</div>
             </div>
           </div>
@@ -571,7 +578,7 @@ function TexasMethodResults({ oneRepMaxes }: { oneRepMaxes: Record<WendlerLift, 
   );
 }
 
-function SurovetskyResults({ benchOneRepMax }: { benchOneRepMax: number }) {
+function SurovetskyResults({ benchOneRepMax, unit }: { benchOneRepMax: number; unit: WeightUnit }) {
   const state = initTableEngineState("surovetsky-1", benchOneRepMax);
   const { session, sets } = planTableSession(surovetskySystem1, state, 2.5);
 
@@ -584,7 +591,7 @@ function SurovetskyResults({ benchOneRepMax }: { benchOneRepMax: number }) {
       <div className="mt-6 grid grid-cols-4 gap-2 sm:grid-cols-7">
         {sets.map((s, i) => (
           <div key={i} className="border border-white/10 p-2 text-center">
-            <div className="font-display text-sm font-bold text-steelLight">{s.weightKg}</div>
+            <div className="font-display text-sm font-bold text-steelLight">{displayWeight(s.weightKg, unit)}</div>
             <div className="text-xs text-chalkDim">
               ×{s.reps}
               {s.isPausedRep ? " ⏸" : ""}
@@ -599,9 +606,11 @@ function SurovetskyResults({ benchOneRepMax }: { benchOneRepMax: number }) {
 function JuggernautResults({
   oneRepMaxes,
   variant,
+  unit,
 }: {
   oneRepMaxes: Record<WendlerLift, number>;
   variant: "classic" | "excel";
+  unit: WeightUnit;
 }) {
   return (
     <div className="mt-10">
@@ -636,7 +645,7 @@ function JuggernautResults({
               <div className="mt-3 grid grid-cols-5 gap-2">
                 {sets.map((s, i) => (
                   <div key={i} className="border border-white/10 p-2 text-center">
-                    <div className="font-display text-sm font-bold text-steelLight">{s.weightKg}</div>
+                    <div className="font-display text-sm font-bold text-steelLight">{displayWeight(s.weightKg, unit)}</div>
                     <div className="text-xs text-chalkDim">
                       ×{s.reps}
                       {s.isAmrap ? "+" : ""}
