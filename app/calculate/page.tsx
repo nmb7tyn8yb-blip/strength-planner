@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase-client";
 import { useLanguage } from "@/components/language-provider";
 import { useUnit } from "@/components/unit-provider";
 import { displayWeight, inputToKg, type WeightUnit } from "@/lib/units";
+import type { TranslationShape } from "@/lib/i18n-dictionary";
 import {
   calculateTrainingMax,
   planWendlerLift,
@@ -111,7 +112,8 @@ export default function CalculatePage() {
 }
 
 function CalculateInner() {
-  const { localizedHref } = useLanguage();
+  const { localizedHref, t } = useLanguage();
+  const pc = t.programCalc;
   const { unit } = useUnit();
   const searchParams = useSearchParams();
   const programSlug = searchParams.get("program") ?? "";
@@ -204,46 +206,39 @@ function CalculateInner() {
     <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
       <div className="mx-auto max-w-2xl">
         <Link href={localizedHref(`/programs/${programSlug}`)} className="text-sm text-chalkDim hover:text-chalk">
-          ← Назад към програмата
+          {pc.backToProgram.replace("← ", "")}
         </Link>
 
         <h1 className="mt-4 font-display text-3xl font-semibold md:text-4xl">
-          Калкулатор — без регистрация
+          {pc.title}
         </h1>
         <p className="mt-2 text-chalkDim">
-          Въведи максимумите си и виж реалния план веднага. Ще пазим нищо, докато сам не
-          решиш да запазиш прогреса си.
+{pc.subtitle}
         </p>
 
         {!supported && (
           <div className="mt-10 border-2 border-white/15 p-8 text-center">
             <p className="text-chalkDim">
-              Калкулаторът за тази програма е в процес на изграждане — засега може да
-              продължиш директно с регистрация, за да ти изготвим плана.
+{pc.unsupportedText}
             </p>
             <Link
               href={localizedHref(`/start?program=${programSlug}`)}
               className="mt-6 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
             >
-              Продължи с регистрация →
+              {pc.continueSignup}
             </Link>
           </div>
         )}
 
         {supported && !showResults && isStartingStrength && (
           <p className="mt-6 text-sm text-amber">
-            Официалната програма не смята по проценти — Rippetoe просто съветва да
-            започнеш по-леко, отколкото мислиш, че можеш. Ще изчислим безопасна начална
-            тежест от оценка за 5 повторения (формула на Brzycki + запас) — това е наша
-            преценка, не фиксирано правило от оригинала. Тежестта бързо ще настигне
-            истинската ти сила.
+{pc.ssNote}
           </p>
         )}
 
         {supported && !showResults && isHepburn && (
           <p className="mt-6 text-sm text-steelLight">
-            Началната тежест ще бъде ~80% от максимума ти — това е документирано в
-            оригиналния източник на метода, не наша преценка.
+{pc.hepburnNote}
           </p>
         )}
 
@@ -254,7 +249,7 @@ function CalculateInner() {
                 <div key={lift.key}>
                   <div className="flex items-baseline justify-between">
                     <label className="text-xs uppercase tracking-widest text-chalkDim">
-                      {lift.label} — {inputLabel} ({unit})
+                      {lift.label} — {pc.inputLabel} ({unit})
                     </label>
                     <Link
                       href={localizedHref(`/1rm-calculator?lift=${lift.key}&returnTo=${encodeURIComponent(
@@ -262,7 +257,7 @@ function CalculateInner() {
                       )}`)}
                       className="text-xs text-steelLight underline-offset-4 hover:underline"
                     >
-                      Не знаеш максимума? →
+                      {pc.unknownMax}
                     </Link>
                   </div>
                   <input
@@ -270,7 +265,7 @@ function CalculateInner() {
                     min={0}
                     step={0.5}
                     required
-                    placeholder="напр. 60"
+                    placeholder={pc.placeholder}
                     value={maxes[lift.key] ? displayWeight(Number(maxes[lift.key]), unit) : ""}
                     onChange={(e) =>
                       setMaxes({ ...maxes, [lift.key]: String(inputToKg(Number(e.target.value) || 0, unit)) })
@@ -285,53 +280,52 @@ function CalculateInner() {
               type="submit"
               className="border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
             >
-              Изчисли плана →
+              {pc.calculateButton}
             </button>
           </form>
         )}
 
         {supported && showResults && programSlug === "531" && (
-          <Wendler531Results numericMaxes={numericMaxes} unit={unit} />
+          <Wendler531Results numericMaxes={numericMaxes} unit={unit} pc={pc} />
         )}
 
         {supported && showResults && programSlug === "starting-strength" && (
-          <StartingStrengthResults numericMaxes={effectiveStartingWeights} wasReduced={isStartingStrength} unit={unit} />
+          <StartingStrengthResults numericMaxes={effectiveStartingWeights} wasReduced={isStartingStrength} unit={unit} pc={pc} />
         )}
 
         {supported && showResults && programSlug === "hepburn-a" && (
-          <HepburnResults startingWeights={effectiveStartingWeights} unit={unit} />
+          <HepburnResults startingWeights={effectiveStartingWeights} unit={unit} pc={pc} />
         )}
 
         {supported && showResults && programSlug === "texas-method" && (
-          <TexasMethodResults oneRepMaxes={numericMaxes} unit={unit} />
+          <TexasMethodResults oneRepMaxes={numericMaxes} unit={unit} pc={pc} />
         )}
 
         {supported && showResults && (programSlug === "surovetsky-1" || programSlug === "surovetsky-2" || programSlug === "surovetsky-full") && (
-          <SurovetskyResults benchOneRepMax={numericMaxes.bench_press} unit={unit} />
+          <SurovetskyResults benchOneRepMax={numericMaxes.bench_press} unit={unit} pc={pc} />
         )}
 
         {supported && showResults && programSlug === "juggernaut" && (
-          <JuggernautResults oneRepMaxes={numericMaxes} variant="classic" unit={unit} />
+          <JuggernautResults oneRepMaxes={numericMaxes} variant="classic" unit={unit} pc={pc} />
         )}
 
         {supported && showResults && programSlug === "juggernaut-excel" && (
-          <JuggernautResults oneRepMaxes={numericMaxes} variant="excel" unit={unit} />
+          <JuggernautResults oneRepMaxes={numericMaxes} variant="excel" unit={unit} pc={pc} />
         )}
 
         {supported && showResults && (
           <div className="mt-10 border-t border-white/10 pt-8 text-center">
             <p className="text-chalkDim">
-              Това е само първата стъпка. За пълния план, автоматична прогресия и
-              календар по дати — запази прогреса си.
+{pc.saveProgressText}
             </p>
             <Link
               href={localizedHref(`/start?program=${programSlug}&squat=${maxes.squat}&bench=${maxes.bench_press}&deadlift=${maxes.deadlift}&press=${maxes.overhead_press}&max_type=1rm`)}
               className="mt-5 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
             >
-              Запази прогреса си →
+              {pc.saveProgressButton}
             </Link>
             <p className="mt-3 text-xs text-chalkDim">
-              Тежестите ти вече ще са попълнени — няма да ги пишеш втори път.
+              {pc.prefilledNote}
             </p>
           </div>
         )}
@@ -340,14 +334,11 @@ function CalculateInner() {
   );
 }
 
-function Wendler531Results({ numericMaxes, unit }: { numericMaxes: Record<WendlerLift, number>; unit: WeightUnit }) {
+function Wendler531Results({ numericMaxes, unit, pc }: { numericMaxes: Record<WendlerLift, number>; unit: WeightUnit; pc: TranslationShape["programCalc"] }) {
   return (
     <div className="mt-10">
-      <h2 className="font-display text-xl font-semibold">Седмица 1 — твоят план</h2>
-      <p className="mt-1 text-sm text-chalkDim">
-        Тренировъчен максимум = 90% от въведения 1RM. Последната серия е AMRAP, следвана
-        от FSL 5×5 — помощен обем, изрично препоръчан от Wendler.
-      </p>
+      <h2 className="font-display text-xl font-semibold">{pc.wendlerTitle}</h2>
+<p className="mt-1 text-sm text-chalkDim">{pc.wendlerSubtitle}</p>
 
       <div className="mt-6 grid gap-6">
         {LIFTS.map((lift) => {
@@ -376,7 +367,7 @@ function Wendler531Results({ numericMaxes, unit }: { numericMaxes: Record<Wendle
                     </div>
                     <div className="mt-1 text-sm text-chalkDim">
                       {set.reps}
-                      {set.isAmrap ? "+" : ""} повт.
+                      {set.isAmrap ? "+" : ""} {pc.reps}
                     </div>
                   </div>
                 ))}
@@ -407,10 +398,12 @@ function StartingStrengthResults({
   numericMaxes,
   wasReduced,
   unit,
+  pc,
 }: {
   numericMaxes: Record<WendlerLift, number>;
   wasReduced: boolean;
   unit: WeightUnit;
+  pc: TranslationShape["programCalc"];
 }) {
   const state = initStartingStrengthState({
     squat: numericMaxes.squat,
@@ -422,14 +415,9 @@ function StartingStrengthResults({
 
   return (
     <div className="mt-10">
-      <h2 className="font-display text-xl font-semibold">
-        Тренировка {session.sessionType} — твоята първа стъпка
-      </h2>
+      <h2 className="font-display text-xl font-semibold">{pc.ssTitle(session.sessionType)}</h2>
       <p className="mt-1 text-sm text-chalkDim">
-        {wasReduced
-          ? "Тежестите по-долу са консервативна оценка (5RM по формула + запас за безопасност) — не фиксирано правило от оригинала, а разумен, безопасен старт."
-          : "Тежестта расте на всяка следваща успешна тренировка."}{" "}
-        Загряването е изчислено автоматично спрямо работната тежест.
+        {wasReduced ? pc.ssSubtitleReduced : pc.ssSubtitleNormal}
       </p>
 
       <div className="mt-6 grid gap-6">
@@ -439,7 +427,7 @@ function StartingStrengthResults({
               {LIFT_LABEL_BG[exercise.exerciseSlug]}
             </h3>
 
-            <p className="mt-3 text-xs uppercase tracking-widest text-chalkDim">Загряване</p>
+            <p className="mt-3 text-xs uppercase tracking-widest text-chalkDim">{pc.warmup}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {exercise.warmupSets.map((w, i) => (
                 <span key={i} className="border border-white/10 px-3 py-1 text-sm text-chalkDim">
@@ -448,7 +436,7 @@ function StartingStrengthResults({
               ))}
             </div>
 
-            <p className="mt-4 text-xs uppercase tracking-widest text-chalkDim">Работни серии</p>
+            <p className="mt-4 text-xs uppercase tracking-widest text-chalkDim">{pc.workingSets}</p>
             <div className="mt-2 grid grid-cols-3 gap-3">
               {exercise.workingSets.map((w, i) => (
                 <div key={i} className="border border-white/10 p-3 text-center">
@@ -456,7 +444,7 @@ function StartingStrengthResults({
                     {displayWeight(w.weightKg, unit)}
                     <span className="text-xs text-chalkDim"> {unit}</span>
                   </div>
-                  <div className="mt-1 text-sm text-chalkDim">{w.reps} повт.</div>
+                  <div className="mt-1 text-sm text-chalkDim">{w.reps} {pc.reps}</div>
                 </div>
               ))}
             </div>
@@ -467,16 +455,11 @@ function StartingStrengthResults({
   );
 }
 
-function HepburnResults({ startingWeights, unit }: { startingWeights: Record<WendlerLift, number>; unit: WeightUnit }) {
+function HepburnResults({ startingWeights, unit, pc }: { startingWeights: Record<WendlerLift, number>; unit: WeightUnit; pc: TranslationShape["programCalc"] }) {
   return (
     <div className="mt-10">
-      <h2 className="font-display text-xl font-semibold">Седмица 1 — 1×3 + 7×2</h2>
-      <p className="mt-1 text-sm text-chalkDim">
-        Прогресията е седмична — тренираш този lift 2 пъти седмично (по класическото
-        разписание), с една и съща схема през цялата седмица. Всяка следваща седмица
-        една двойка става тройка, докато стигнеш 8×3 — тогава се добавя тежест и
-        цикълът започва отново.
-      </p>
+      <h2 className="font-display text-xl font-semibold">{pc.hepburnTitle}</h2>
+      <p className="mt-1 text-sm text-chalkDim">{pc.hepburnSubtitle}</p>
 
       <div className="mt-6 grid gap-6">
         {LIFTS.map((lift) => {
@@ -490,11 +473,11 @@ function HepburnResults({ startingWeights, unit }: { startingWeights: Record<Wen
               <div className="flex items-baseline justify-between">
                 <h3 className="font-display text-lg font-semibold">{LIFT_LABEL_BG[lift.key]}</h3>
                 <span className="text-sm text-chalkDim">
-                  +{displayWeight(DEFAULT_HEPBURN_INCREMENTS_KG[lift.key as HepburnLift], unit)} {unit} след 8×3
+                  +{displayWeight(DEFAULT_HEPBURN_INCREMENTS_KG[lift.key as HepburnLift], unit)} {unit} {pc.hepburnAfter}
                 </span>
               </div>
 
-              <p className="mt-3 text-xs uppercase tracking-widest text-chalkDim">Загряване</p>
+              <p className="mt-3 text-xs uppercase tracking-widest text-chalkDim">{pc.warmup}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {warmup.map((w, i) => (
                   <span key={i} className="border border-white/10 px-3 py-1 text-sm text-chalkDim">
@@ -504,7 +487,7 @@ function HepburnResults({ startingWeights, unit }: { startingWeights: Record<Wen
               </div>
 
               <p className="mt-4 text-xs uppercase tracking-widest text-chalkDim">
-                Работни серии тази седмица (1×3 + 7×2 — {displayWeight(startWeight, unit)} {unit})
+                {pc.hepburnThisWeek(displayWeight(startWeight, unit), unit)}
               </p>
               <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-8">
                 {workingSets.map((set, i) => (
@@ -522,7 +505,7 @@ function HepburnResults({ startingWeights, unit }: { startingWeights: Record<Wen
   );
 }
 
-function TexasMethodResults({ oneRepMaxes, unit }: { oneRepMaxes: Record<WendlerLift, number>; unit: WeightUnit }) {
+function TexasMethodResults({ oneRepMaxes, unit, pc }: { oneRepMaxes: Record<WendlerLift, number>; unit: WeightUnit; pc: TranslationShape["programCalc"] }) {
   // Texas Method иска "текущ 5RM или работна тежест" (документирано в оригинала) —
   // оценяваме 5RM от 1RM по формулата на Brzycki (~89%), без допълнителен запас.
   const estimate5RM = (max: number) => Math.round((max * (32 / 36)) / 2.5) * 2.5;
@@ -537,15 +520,12 @@ function TexasMethodResults({ oneRepMaxes, unit }: { oneRepMaxes: Record<Wendler
 
   return (
     <div className="mt-10">
-      <h2 className="font-display text-xl font-semibold">Понеделник — обемен ден</h2>
-      <p className="mt-1 text-sm text-chalkDim">
-        Тежестите са оценени от твоя 1RM (формула на Brzycki за 5RM) — Texas Method
-        реално иска текущ 5RM, не максимум.
-      </p>
+      <h2 className="font-display text-xl font-semibold">{pc.texasTitle}</h2>
+      <p className="mt-1 text-sm text-chalkDim">{pc.texasSubtitle}</p>
 
       <div className="mt-6 grid gap-6">
         <div className="border-2 border-white/15 p-5">
-          <h3 className="font-display text-lg font-semibold">Клек</h3>
+          <h3 className="font-display text-lg font-semibold">{LIFT_LABEL_BG.squat}</h3>
           <div className="mt-3 grid grid-cols-5 gap-2">
             {plan.squat.map((s, i) => (
               <div key={i} className="border border-white/10 p-2 text-center">
@@ -567,7 +547,7 @@ function TexasMethodResults({ oneRepMaxes, unit }: { oneRepMaxes: Record<Wendler
           </div>
         </div>
         <div className="border-2 border-white/15 p-5">
-          <h3 className="font-display text-lg font-semibold">Мъртва тяга</h3>
+          <h3 className="font-display text-lg font-semibold">{LIFT_LABEL_BG.deadlift}</h3>
           <div className="mt-3 grid grid-cols-1 gap-2 w-24">
             <div className="border border-white/10 p-2 text-center">
               <div className="font-display text-sm font-bold text-steelLight">{displayWeight(state.currentDeadliftKg, unit)}</div>
@@ -580,16 +560,14 @@ function TexasMethodResults({ oneRepMaxes, unit }: { oneRepMaxes: Record<Wendler
   );
 }
 
-function SurovetskyResults({ benchOneRepMax, unit }: { benchOneRepMax: number; unit: WeightUnit }) {
+function SurovetskyResults({ benchOneRepMax, unit, pc }: { benchOneRepMax: number; unit: WeightUnit; pc: TranslationShape["programCalc"] }) {
   const state = initTableEngineState("surovetsky-1", benchOneRepMax);
   const { session, sets } = planTableSession(surovetskySystem1, state, 2.5);
 
   return (
     <div className="mt-10">
       <h2 className="font-display text-xl font-semibold">{session.name}</h2>
-      <p className="mt-1 text-sm text-chalkDim">
-        Точните проценти от оригиналните таблици, изчислени от твоя реален максимум.
-      </p>
+<p className="mt-1 text-sm text-chalkDim">{pc.surovetskySubtitle}</p>
       <div className="mt-6 grid grid-cols-4 gap-2 sm:grid-cols-7">
         {sets.map((s, i) => (
           <div key={i} className="border border-white/10 p-2 text-center">
@@ -609,17 +587,18 @@ function JuggernautResults({
   oneRepMaxes,
   variant,
   unit,
+  pc,
 }: {
   oneRepMaxes: Record<WendlerLift, number>;
   variant: "classic" | "excel";
   unit: WeightUnit;
+  pc: TranslationShape["programCalc"];
 }) {
   return (
     <div className="mt-10">
-      <h2 className="font-display text-xl font-semibold">Седмица 1 (натрупване)</h2>
+      <h2 className="font-display text-xl font-semibold">{pc.juggernautTitle}</h2>
       <p className="mt-1 text-sm text-chalkDim">
-        Тренировъчен максимум = 90% от въведения 1RM.{" "}
-        {variant === "classic" ? "Класически 16-седмичен вариант." : "Опростен 12-седмичен вариант."}
+        {pc.juggernautSubtitle(variant === "classic" ? pc.juggernautClassic : pc.juggernautExcel)}
       </p>
 
       <div className="mt-6 grid gap-6">
