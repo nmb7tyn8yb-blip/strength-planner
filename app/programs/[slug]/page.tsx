@@ -43,7 +43,7 @@ interface ProgramRow {
 }
 
 export default function ProgramDetailPage() {
-  const { t } = useLanguage();
+  const { t, localizedHref } = useLanguage();
   const d = t.programDetail;
   const params = useParams();
   const slug = params.slug as string;
@@ -85,7 +85,7 @@ export default function ProgramDetailPage() {
   return (
     <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
       <div className="mx-auto max-w-3xl">
-        <Link href="/programs" className="text-sm text-chalkDim hover:text-chalk">
+        <Link href={localizedHref("/programs")} className="text-sm text-chalkDim hover:text-chalk">
           {d.backToAll}
         </Link>
 
@@ -213,13 +213,13 @@ export default function ProgramDetailPage() {
 
         <div className="mt-12 flex flex-wrap gap-4">
           <Link
-            href={`/calculate?program=${program.slug}`}
+            href={localizedHref(`/calculate?program=${program.slug}`)}
             className="inline-flex items-center gap-3 border-2 border-amber bg-amber px-7 py-4 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
           >
             {d.calculateButton}
           </Link>
           <Link
-            href="/programs"
+            href={localizedHref("/programs")}
             className="inline-flex items-center gap-2 border-2 border-white/20 px-7 py-4 font-display text-sm font-semibold uppercase tracking-wider text-chalk transition hover:border-white/50"
           >
             {d.browseOthers}
