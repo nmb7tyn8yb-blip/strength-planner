@@ -1,9 +1,11 @@
-import { notFound } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
-
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+import { useLanguage } from "@/components/language-provider";
+import LoadingScreen from "@/components/loading-screen";
 
 interface RecommendationProfile {
   goals: string[];
@@ -40,51 +42,51 @@ interface ProgramRow {
   detailed_description: DetailedDescription | null;
 }
 
-const EQUIPMENT_LABEL: Record<string, string> = {
-  щанга: "щанга",
-  дискове: "дискове",
-  "силова рамка": "силова рамка (клетка с предпазни лостове — за самостоятелен клек/лежанка, без партньор)",
-  дъмбели: "дъмбели (за помощни упражнения)",
-  стойка: "силова рамка (клетка с предпазни лостове — за самостоятелен клек/лежанка, без партньор)",
-};
+export default function ProgramDetailPage() {
+  const { t } = useLanguage();
+  const d = t.programDetail;
+  const params = useParams();
+  const slug = params.slug as string;
 
-const LEVEL_LABEL: Record<string, string> = {
-  beginner: "Начинаещ",
-  intermediate: "Средно напреднал",
-  advanced: "Напреднал",
-};
+  const [program, setProgram] = useState<ProgramRow | null>(null);
+  const [notFoundFlag, setNotFoundFlag] = useState(false);
 
-const GOAL_LABEL: Record<string, string> = {
-  strength: "Сила",
-  strength_mass: "Сила и маса",
-  bench_focus: "Основно лежанка",
-  powerlifting_total: "Трибой",
-};
+  useEffect(() => {
+    supabase
+      .from("programs")
+      .select("*")
+      .eq("slug", slug)
+      .single()
+      .then(({ data, error }) => {
+        if (error || !data) {
+          setNotFoundFlag(true);
+          return;
+        }
+        setProgram(data as ProgramRow);
+      });
+  }, [slug]);
 
-const AUTOREG_LABEL: Record<string, string> = {
-  none: "Фиксиран план, без автоматична адаптация",
-  medium: "Частична автоматична адаптация (AMRAP серии)",
-  high: "Висока автоматична адаптация по представяне",
-};
-
-export default async function ProgramDetailPage({ params }: { params: { slug: string } }) {
-  const { data: program, error } = await supabase
-    .from("programs")
-    .select("*")
-    .eq("slug", params.slug)
-    .single<ProgramRow>();
-
-  if (error || !program) {
+  if (notFoundFlag) {
     notFound();
   }
 
+  if (!program) {
+    return <LoadingScreen />;
+  }
+
   const p = program.recommendation_profile;
+
+  const otherSportsText = {
+    low: d.otherSportsLabels.low,
+    medium: d.otherSportsLabels.medium,
+    high: d.otherSportsLabels.high,
+  }[p.other_sports_tolerance];
 
   return (
     <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
       <div className="mx-auto max-w-3xl">
         <Link href="/programs" className="text-sm text-chalkDim hover:text-chalk">
-          ← Всички програми
+          {d.backToAll}
         </Link>
 
         <h1 className="mt-4 font-display text-4xl font-semibold leading-tight md:text-5xl">
@@ -97,12 +99,12 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
 
         {/* Ключови показатели */}
         <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden border border-white/10 bg-white/10 sm:grid-cols-4">
-          <Stat label="Ниво" value={LEVEL_LABEL[program.level] ?? program.level} />
-          <Stat label="Цел" value={GOAL_LABEL[program.primary_goal] ?? program.primary_goal} />
-          <Stat label="Дни/седмица" value={String(program.days_per_week)} />
+          <Stat label={d.statLevel} value={(t.programs.levels as Record<string, string>)[program.level] ?? program.level} />
+          <Stat label={d.statGoal} value={(t.programs.goals as Record<string, string>)[program.primary_goal] ?? program.primary_goal} />
+          <Stat label={d.statDays} value={String(program.days_per_week)} />
           <Stat
-            label="Продължителност"
-            value={program.duration_weeks ? `${program.duration_weeks} седмици` : "Циклична"}
+            label={d.statDuration}
+            value={program.duration_weeks ? `${program.duration_weeks} ${t.programs.weeks}` : t.programs.cyclic}
           />
         </div>
 
@@ -117,7 +119,7 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
             {program.detailed_description.overview && (
               <div>
                 <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
-                  Какво представлява
+                  {d.overviewTitle}
                 </h2>
                 <p className="mt-2 leading-relaxed text-chalk">{program.detailed_description.overview}</p>
               </div>
@@ -126,7 +128,7 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
             {program.detailed_description.how_it_works && (
               <div>
                 <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
-                  Как точно работи
+                  {d.howItWorksTitle}
                 </h2>
                 <p className="mt-2 leading-relaxed text-chalk">{program.detailed_description.how_it_works}</p>
               </div>
@@ -136,7 +138,7 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
               {program.detailed_description.best_for && program.detailed_description.best_for.length > 0 && (
                 <div>
                   <h2 className="font-display text-sm uppercase tracking-widest text-steelLight">
-                    За кого е подходяща
+                    {d.bestForTitle}
                   </h2>
                   <ul className="mt-2 space-y-2">
                     {program.detailed_description.best_for.map((item, i) => (
@@ -152,7 +154,7 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
                 program.detailed_description.considerations.length > 0 && (
                   <div>
                     <h2 className="font-display text-sm uppercase tracking-widest text-amber">
-                      На какво да обърнеш внимание
+                      {d.considerationsTitle}
                     </h2>
                     <ul className="mt-2 space-y-2">
                       {program.detailed_description.considerations.map((item, i) => (
@@ -170,53 +172,41 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
         {/* Детайли */}
         <div className="mt-12 grid gap-8 md:grid-cols-2">
           <div>
-            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
-              Оборудване
-            </h2>
+            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">{d.equipmentTitle}</h2>
             {program.required_equipment ? (
               <ul className="mt-2 space-y-1">
                 {program.required_equipment.map((item) => (
                   <li key={item} className="text-sm leading-relaxed text-chalk">
-                    · {EQUIPMENT_LABEL[item] ?? item}
+                    · {d.equipmentItems[item] ?? item}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-2 text-chalk">{p.equipment === "full" ? "Пълна зала" : "Само щанга и дискове"}</p>
+              <p className="mt-2 text-chalk">{p.equipment === "full" ? d.equipmentFull : d.equipmentMinimal}</p>
             )}
           </div>
 
           <div>
-            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
-              Автоматична адаптация
-            </h2>
-            <p className="mt-2 text-chalk">{AUTOREG_LABEL[p.autoregulation]}</p>
+            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">{d.autoregTitle}</h2>
+            <p className="mt-2 text-chalk">{d.autoregLabels[p.autoregulation]}</p>
           </div>
 
           <div>
-            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
-              Минимална продължителност на сесия
-            </h2>
-            <p className="mt-2 text-chalk">{p.min_session_minutes} минути</p>
-          </div>
-
-          <div>
-            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
-              Съвместимост с други спортове
-            </h2>
+            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">{d.sessionMinTitle}</h2>
             <p className="mt-2 text-chalk">
-              {{ low: "Ниска — тежка честота, трудно се комбинира", medium: "Умерена", high: "Висока — гъвкава" }[
-                p.other_sports_tolerance
-              ]}
+              {p.min_session_minutes} {d.minutesSuffix}
             </p>
+          </div>
+
+          <div>
+            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">{d.otherSportsTitle}</h2>
+            <p className="mt-2 text-chalk">{otherSportsText}</p>
           </div>
         </div>
 
         {program.failure_rule_summary && (
           <div className="mt-10 border border-white/15 p-6">
-            <h2 className="font-display text-sm uppercase tracking-widest text-amber">
-              Какво се случва при неуспешна серия
-            </h2>
+            <h2 className="font-display text-sm uppercase tracking-widest text-amber">{d.failureRuleTitle}</h2>
             <p className="mt-2 text-chalkDim">{program.failure_rule_summary}</p>
           </div>
         )}
@@ -226,13 +216,13 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
             href={`/calculate?program=${program.slug}`}
             className="inline-flex items-center gap-3 border-2 border-amber bg-amber px-7 py-4 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
           >
-            Изчисли моя план →
+            {d.calculateButton}
           </Link>
           <Link
             href="/programs"
             className="inline-flex items-center gap-2 border-2 border-white/20 px-7 py-4 font-display text-sm font-semibold uppercase tracking-wider text-chalk transition hover:border-white/50"
           >
-            Разгледай други
+            {d.browseOthers}
           </Link>
         </div>
       </div>
@@ -243,9 +233,7 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-graphite p-5">
-      <span className="font-display text-[11px] uppercase tracking-widest text-chalkDim">
-        {label}
-      </span>
+      <span className="font-display text-[11px] uppercase tracking-widest text-chalkDim">{label}</span>
       <p className="mt-1 font-display text-lg font-semibold text-chalk">{value}</p>
     </div>
   );
