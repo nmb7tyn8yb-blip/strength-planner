@@ -11,6 +11,8 @@ import {
   type Sex,
 } from "@/lib/one-rep-max";
 import { useLanguage } from "@/components/language-provider";
+import { useUnit } from "@/components/unit-provider";
+import { inputToKg, displayWeight } from "@/lib/units";
 import ProductRecommendations from "@/components/product-recommendations";
 
 const LIFT_KEYS: LiftKey[] = ["squat", "bench_press", "deadlift", "overhead_press"];
@@ -33,6 +35,7 @@ export default function OneRepMaxCalculatorPage() {
 function OneRepMaxCalculatorInner() {
   const { t } = useLanguage();
   const c = t.calculator;
+  const { unit } = useUnit();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo");
   const liftFromUrl = searchParams.get("lift") as LiftKey | null;
@@ -46,20 +49,22 @@ function OneRepMaxCalculatorInner() {
   const [showLevel, setShowLevel] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const w = Number(weight) || 0;
+  // всичко въведено се конвертира веднага до kg — вътрешната математика
+  // винаги работи в kg, само показването следва избраната единица
+  const wKg = inputToKg(Number(weight) || 0, unit);
   const r = Number(reps) || 0;
-  const bw = Number(bodyweight) || 0;
+  const bwKg = inputToKg(Number(bodyweight) || 0, unit);
   const a = age ? Number(age) : null;
 
-  const estimate = estimateOneRepMax(w, r);
+  const estimate = estimateOneRepMax(wKg, r);
   const table = repMaxTable(estimate.average);
-  const level = showLevel && bw > 0 ? estimateStrengthLevel(lift, estimate.average, bw, sex, a) : null;
+  const level = showLevel && bwKg > 0 ? estimateStrengthLevel(lift, estimate.average, bwKg, sex, a) : null;
 
   function buildReturnUrl(): string | null {
     if (!returnTo || estimate.average <= 0) return null;
     const [path, query] = returnTo.split("?");
     const params = new URLSearchParams(query ?? "");
-    params.set(RETURN_PARAM_BY_LIFT[lift], String(estimate.average));
+    params.set(RETURN_PARAM_BY_LIFT[lift], String(estimate.average)); // винаги в kg — /calculate работи в kg вътрешно
     return `${path}?${params.toString()}`;
   }
 
@@ -67,6 +72,9 @@ function OneRepMaxCalculatorInner() {
     e.preventDefault();
     setSubmitted(true);
   }
+
+  const weightPlaceholder = unit === "kg" ? "e.g. 80" : "e.g. 175";
+  const bwPlaceholder = unit === "kg" ? "e.g. 75" : "e.g. 165";
 
   return (
     <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
@@ -96,13 +104,15 @@ function OneRepMaxCalculatorInner() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs uppercase tracking-widest text-chalkDim">{c.weightLabel}</label>
+              <label className="text-xs uppercase tracking-widest text-chalkDim">
+                {c.weightLabel} ({unit})
+              </label>
               <input
                 type="number"
                 min={0}
                 step={0.5}
                 required
-                placeholder="e.g. 80"
+                placeholder={weightPlaceholder}
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 className="mt-1 w-full border-2 border-white/15 bg-transparent px-4 py-3 text-chalk placeholder:text-chalkDim focus:border-amber"
@@ -134,12 +144,14 @@ function OneRepMaxCalculatorInner() {
           {showLevel && (
             <div className="grid grid-cols-3 gap-4 border-l-2 border-steel pl-5">
               <div>
-                <label className="text-xs uppercase tracking-widest text-chalkDim">{c.bodyweightLabel}</label>
+                <label className="text-xs uppercase tracking-widest text-chalkDim">
+                  {c.bodyweightLabel} ({unit})
+                </label>
                 <input
                   type="number"
                   min={0}
                   step={0.5}
-                  placeholder="e.g. 75"
+                  placeholder={bwPlaceholder}
                   value={bodyweight}
                   onChange={(e) => setBodyweight(e.target.value)}
                   className="mt-1 w-full border-2 border-white/15 bg-transparent px-3 py-2 text-chalk placeholder:text-chalkDim focus:border-amber"
@@ -179,11 +191,11 @@ function OneRepMaxCalculatorInner() {
           </button>
         </form>
 
-        {submitted && w > 0 && r > 0 && (
+        {submitted && wKg > 0 && r > 0 && (
           <div className="mt-12">
             <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">{c.resultTitle}</h2>
             <div className="mt-2 font-display text-5xl font-bold text-amber">
-              {estimate.average} <span className="text-2xl text-chalkDim">kg</span>
+              {displayWeight(estimate.average, unit)} <span className="text-2xl text-chalkDim">{unit}</span>
             </div>
 
             {returnTo && (
@@ -191,7 +203,7 @@ function OneRepMaxCalculatorInner() {
                 href={buildReturnUrl() ?? "#"}
                 className="mt-4 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
               >
-                {estimate.average} kg — {c.exercises[lift]} →
+                {displayWeight(estimate.average, unit)} {unit} — {c.exercises[lift]} →
               </Link>
             )}
 
@@ -212,7 +224,7 @@ function OneRepMaxCalculatorInner() {
                 </div>
                 {level.tierIndex < 4 && level.weightToNextTierKg !== null && (
                   <p className="mt-3 text-sm text-chalk">
-                    {c.moreToNextTier(level.weightToNextTierKg, t.strengthTiers[level.tierIndex + 1])}
+                    {c.moreToNextTier(displayWeight(level.weightToNextTierKg, unit), unit, t.strengthTiers[level.tierIndex + 1])}
                   </p>
                 )}
                 <p className="mt-4 text-xs leading-relaxed text-chalkDim">{c.strengthDisclaimer}</p>
@@ -225,7 +237,9 @@ function OneRepMaxCalculatorInner() {
             <div className="mt-3 grid grid-cols-5 gap-2 sm:grid-cols-10">
               {table.map((row) => (
                 <div key={row.reps} className="border border-white/10 p-2 text-center">
-                  <div className="font-display text-sm font-bold text-steelLight">{row.weight}</div>
+                  <div className="font-display text-sm font-bold text-steelLight">
+                    {displayWeight(row.weight, unit)}
+                  </div>
                   <div className="text-xs text-chalkDim">×{row.reps}</div>
                 </div>
               ))}
