@@ -348,7 +348,7 @@ export default function DashboardPage() {
                   <tr key={i} className="border-b border-white/5">
                     <td className="p-3 text-chalkDim">{new Date(h.completed_at).toLocaleDateString("bg-BG")}</td>
                     <td className="p-3 text-chalk">{h.workout_sets?.exercises?.name}</td>
-                    <td className="p-3 text-chalk">{h.actual_weight} kg</td>
+                    <td className="p-3 text-chalk">{h.actual_weight > 0 ? `${h.actual_weight} kg` : "—"}</td>
                     <td className="p-3 text-chalk">{h.actual_reps}</td>
                   </tr>
                 ))}
