@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import ProductRecommendations from "@/components/product-recommendations";
 import {
   estimateOneRepMax,
   repMaxTable,
@@ -240,6 +241,8 @@ function OneRepMaxCalculatorInner() {
               Тези оценки са формула, не тест — реалният ти максимум може да варира с
               ±5-10% според деня, техниката и умората.
             </p>
+
+            <ProductRecommendations placement="1rm-calculator" />
           </div>
         )}
       </div>
