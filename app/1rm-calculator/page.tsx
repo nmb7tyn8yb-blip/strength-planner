@@ -3,22 +3,17 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import ProductRecommendations from "@/components/product-recommendations";
 import {
   estimateOneRepMax,
   repMaxTable,
   estimateStrengthLevel,
-  STRENGTH_LEVEL_DISCLAIMER,
   type LiftKey,
   type Sex,
 } from "@/lib/one-rep-max";
+import { useLanguage } from "@/components/language-provider";
+import ProductRecommendations from "@/components/product-recommendations";
 
-const LIFTS: { key: LiftKey; label: string }[] = [
-  { key: "squat", label: "Клек" },
-  { key: "bench_press", label: "Лежанка" },
-  { key: "deadlift", label: "Мъртва тяга" },
-  { key: "overhead_press", label: "Военна преса" },
-];
+const LIFT_KEYS: LiftKey[] = ["squat", "bench_press", "deadlift", "overhead_press"];
 
 const RETURN_PARAM_BY_LIFT: Record<LiftKey, string> = {
   squat: "squat",
@@ -36,6 +31,8 @@ export default function OneRepMaxCalculatorPage() {
 }
 
 function OneRepMaxCalculatorInner() {
+  const { t } = useLanguage();
+  const c = t.calculator;
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo");
   const liftFromUrl = searchParams.get("lift") as LiftKey | null;
@@ -75,28 +72,23 @@ function OneRepMaxCalculatorInner() {
     <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
       <div className="mx-auto max-w-2xl">
         <Link href="/" className="text-sm text-chalkDim hover:text-chalk">
-          ← Начало
+          ← {t.programs.backHome.replace("← ", "")}
         </Link>
 
-        <h1 className="mt-4 font-display text-3xl font-semibold md:text-4xl">
-          Калкулатор за максимум (1RM)
-        </h1>
-        <p className="mt-2 text-chalkDim">
-          Въведи тегло и повторения от скорошна тренировка — ще изчислим приблизителния
-          ти едноповторен максимум по три формули.
-        </p>
+        <h1 className="mt-4 font-display text-3xl font-semibold md:text-4xl">{c.title}</h1>
+        <p className="mt-2 text-chalkDim">{c.subtitle}</p>
 
         <form onSubmit={handleSubmit} className="mt-8 grid gap-5">
           <div>
-            <label className="text-xs uppercase tracking-widest text-chalkDim">Упражнение</label>
+            <label className="text-xs uppercase tracking-widest text-chalkDim">{c.exerciseLabel}</label>
             <select
               value={lift}
               onChange={(e) => setLift(e.target.value as LiftKey)}
               className="mt-1 w-full border-2 border-white/15 bg-graphite px-4 py-3 text-chalk focus:border-amber"
             >
-              {LIFTS.map((l) => (
-                <option key={l.key} value={l.key}>
-                  {l.label}
+              {LIFT_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {c.exercises[key]}
                 </option>
               ))}
             </select>
@@ -104,20 +96,20 @@ function OneRepMaxCalculatorInner() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs uppercase tracking-widest text-chalkDim">Вдигнато тегло (kg)</label>
+              <label className="text-xs uppercase tracking-widest text-chalkDim">{c.weightLabel}</label>
               <input
                 type="number"
                 min={0}
                 step={0.5}
                 required
-                placeholder="напр. 80"
+                placeholder="e.g. 80"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 className="mt-1 w-full border-2 border-white/15 bg-transparent px-4 py-3 text-chalk placeholder:text-chalkDim focus:border-amber"
               />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-widest text-chalkDim">Повторения</label>
+              <label className="text-xs uppercase tracking-widest text-chalkDim">{c.repsLabel}</label>
               <input
                 type="number"
                 min={1}
@@ -127,7 +119,7 @@ function OneRepMaxCalculatorInner() {
                 onChange={(e) => setReps(e.target.value)}
                 className="mt-1 w-full border-2 border-white/15 bg-transparent px-4 py-3 text-chalk placeholder:text-chalkDim focus:border-amber"
               />
-              <p className="mt-1 text-xs text-chalkDim">Най-точно е под 10 повторения.</p>
+              <p className="mt-1 text-xs text-chalkDim">{c.repsHint}</p>
             </div>
           </div>
 
@@ -136,41 +128,41 @@ function OneRepMaxCalculatorInner() {
             onClick={() => setShowLevel(!showLevel)}
             className="text-left text-sm text-steelLight underline-offset-4 hover:underline"
           >
-            {showLevel ? "− Скрий сравнение с ниво на сила" : "+ Сравни спрямо ниво на сила (по тегло/пол/възраст)"}
+            {showLevel ? c.compareHide : c.compareShow}
           </button>
 
           {showLevel && (
             <div className="grid grid-cols-3 gap-4 border-l-2 border-steel pl-5">
               <div>
-                <label className="text-xs uppercase tracking-widest text-chalkDim">Твоето тегло (kg)</label>
+                <label className="text-xs uppercase tracking-widest text-chalkDim">{c.bodyweightLabel}</label>
                 <input
                   type="number"
                   min={0}
                   step={0.5}
-                  placeholder="напр. 75"
+                  placeholder="e.g. 75"
                   value={bodyweight}
                   onChange={(e) => setBodyweight(e.target.value)}
                   className="mt-1 w-full border-2 border-white/15 bg-transparent px-3 py-2 text-chalk placeholder:text-chalkDim focus:border-amber"
                 />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-widest text-chalkDim">Пол</label>
+                <label className="text-xs uppercase tracking-widest text-chalkDim">{c.sexLabel}</label>
                 <select
                   value={sex}
                   onChange={(e) => setSex(e.target.value as Sex)}
                   className="mt-1 w-full border-2 border-white/15 bg-graphite px-3 py-2 text-chalk focus:border-amber"
                 >
-                  <option value="male">Мъж</option>
-                  <option value="female">Жена</option>
+                  <option value="male">{c.male}</option>
+                  <option value="female">{c.female}</option>
                 </select>
               </div>
               <div>
-                <label className="text-xs uppercase tracking-widest text-chalkDim">Възраст (по избор)</label>
+                <label className="text-xs uppercase tracking-widest text-chalkDim">{c.ageLabel}</label>
                 <input
                   type="number"
                   min={14}
                   max={100}
-                  placeholder="незадължително"
+                  placeholder={c.ageOptional}
                   value={age}
                   onChange={(e) => setAge(e.target.value)}
                   className="mt-1 w-full border-2 border-white/15 bg-transparent px-3 py-2 text-chalk placeholder:text-chalkDim focus:border-amber"
@@ -183,15 +175,13 @@ function OneRepMaxCalculatorInner() {
             type="submit"
             className="mt-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
           >
-            Изчисли →
+            {c.calculateButton}
           </button>
         </form>
 
         {submitted && w > 0 && r > 0 && (
           <div className="mt-12">
-            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
-              Приблизителен максимум
-            </h2>
+            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">{c.resultTitle}</h2>
             <div className="mt-2 font-display text-5xl font-bold text-amber">
               {estimate.average} <span className="text-2xl text-chalkDim">kg</span>
             </div>
@@ -201,32 +191,36 @@ function OneRepMaxCalculatorInner() {
                 href={buildReturnUrl() ?? "#"}
                 className="mt-4 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
               >
-                Използвай {estimate.average} kg за {LIFTS.find((l) => l.key === lift)?.label} →
+                {estimate.average} kg — {c.exercises[lift]} →
               </Link>
             )}
 
-
-
             {level && (
               <div className="mt-8 border-2 border-steel p-6">
-                <div className="flex items-baseline justify-between">
-                  <span className="font-display text-2xl font-semibold text-steelLight">{level.tier}</span>
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div>
+                    <span className="font-display text-2xl font-semibold text-steelLight">
+                      {t.strengthTiers[level.tierIndex]}
+                    </span>
+                    <span className="ml-3 border border-amber/40 px-2 py-0.5 font-display text-xs font-bold uppercase tracking-wide text-amber">
+                      {t.strengthBadges[level.tierIndex]}
+                    </span>
+                  </div>
                   <span className="text-sm text-chalkDim">
-                    {(level.ratio).toFixed(2)}× телесното тегло
+                    {level.ratio.toFixed(2)} {c.strengthLevelPrefix}
                   </span>
                 </div>
-                {level.nextTier && level.weightToNextTierKg !== null && (
-                  <p className="mt-2 text-sm text-chalk">
-                    Още <strong className="text-amber">{level.weightToNextTierKg} kg</strong> до ниво{" "}
-                    <strong>{level.nextTier}</strong>.
+                {level.tierIndex < 4 && level.weightToNextTierKg !== null && (
+                  <p className="mt-3 text-sm text-chalk">
+                    {c.moreToNextTier(level.weightToNextTierKg, t.strengthTiers[level.tierIndex + 1])}
                   </p>
                 )}
-                <p className="mt-4 text-xs leading-relaxed text-chalkDim">{STRENGTH_LEVEL_DISCLAIMER}</p>
+                <p className="mt-4 text-xs leading-relaxed text-chalkDim">{c.strengthDisclaimer}</p>
               </div>
             )}
 
             <h3 className="mt-10 font-display text-sm uppercase tracking-widest text-chalkDim">
-              Тежест за други повторения (изчислено от максимума)
+              {c.repTableTitle}
             </h3>
             <div className="mt-3 grid grid-cols-5 gap-2 sm:grid-cols-10">
               {table.map((row) => (
@@ -237,10 +231,7 @@ function OneRepMaxCalculatorInner() {
               ))}
             </div>
 
-            <p className="mt-6 text-xs text-chalkDim">
-              Тези оценки са формула, не тест — реалният ти максимум може да варира с
-              ±5-10% според деня, техниката и умората.
-            </p>
+            <p className="mt-6 text-xs text-chalkDim">{c.formulaNote}</p>
 
             <ProductRecommendations placement="1rm-calculator" />
           </div>
