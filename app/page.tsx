@@ -9,7 +9,7 @@ import { useLanguage } from "@/components/language-provider";
 const PROGRESSION_EXAMPLE = [40, 42.5, 45, 47.5, 50, 52.5, 55, 57.5];
 
 export default function HomePage() {
-  const { t } = useLanguage();
+  const { t, localizedHref } = useLanguage();
   const h = t.home;
 
   return (
@@ -29,14 +29,14 @@ export default function HomePage() {
             <p className="mt-6 max-w-md text-lg leading-relaxed text-chalkDim">{h.heroSubtitle}</p>
             <div className="mt-10 flex flex-wrap gap-4">
               <Link
-                href="/quiz"
+                href={localizedHref("/quiz")}
                 className="group inline-flex items-center gap-3 border-2 border-amber bg-amber px-7 py-4 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
               >
                 {h.ctaQuiz}
                 <span aria-hidden className="transition group-hover:translate-x-1">→</span>
               </Link>
               <Link
-                href="/programs"
+                href={localizedHref("/programs")}
                 className="inline-flex items-center gap-2 border-2 border-white/20 px-7 py-4 font-display text-sm font-semibold uppercase tracking-wider text-chalk transition hover:border-white/50"
               >
                 {h.ctaCatalog}
@@ -101,7 +101,7 @@ export default function HomePage() {
             <h2 className="font-display text-2xl font-semibold uppercase tracking-wide text-chalk">
               {h.programsTitle}
             </h2>
-            <Link href="/programs" className="text-sm text-steelLight underline-offset-4 hover:underline">
+            <Link href={localizedHref("/programs")} className="text-sm text-steelLight underline-offset-4 hover:underline">
               {h.viewAll}
             </Link>
           </div>
@@ -121,7 +121,7 @@ export default function HomePage() {
       <section className="border-t border-white/10 px-6 py-20 text-center">
         <h2 className="font-display text-3xl font-semibold">{h.finalCta}</h2>
         <Link
-          href="/quiz"
+          href={localizedHref("/quiz")}
           className="mt-8 inline-flex items-center gap-3 border-2 border-amber bg-amber px-7 py-4 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
         >
           {h.startQuiz}
