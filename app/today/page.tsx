@@ -9,6 +9,7 @@ import { useLanguage } from "@/components/language-provider";
 import { useUnit } from "@/components/unit-provider";
 import { displayWeight, inputToKg } from "@/lib/units";
 import ProductRecommendations from "@/components/product-recommendations";
+import { EXERCISE_PLACEMENT_MAP } from "@/lib/affiliate-products";
 import {
   completeStartingStrengthWorkout,
   completeWendlerWorkout,
@@ -160,6 +161,9 @@ export default function TodayPage() {
   }
 
   const exerciseGroups = groupBy(sets, (s) => s.exercises.name);
+  const todaysProductIds = Array.from(
+    new Set(Object.keys(exerciseGroups).flatMap((name) => EXERCISE_PLACEMENT_MAP[name] ?? []))
+  );
 
   function computeResults(): SessionResultInput[] {
     return Object.entries(exerciseGroups)
@@ -721,6 +725,10 @@ export default function TodayPage() {
                 Завърши тренировката →
               </button>
             </div>
+
+            {todaysProductIds.length > 0 && (
+              <ProductRecommendations productIds={todaysProductIds} title="За днешната тренировка" />
+            )}
           </div>
         )}
 
