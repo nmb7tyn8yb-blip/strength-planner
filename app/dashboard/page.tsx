@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase-client";
 import { getCurrentWorkingWeights } from "@/lib/workout-engine";
 import LoadingScreen from "@/components/loading-screen";
 import EmptyState from "@/components/empty-state";
+import { useLanguage } from "@/components/language-provider";
 import { useUnit } from "@/components/unit-provider";
 import { displayWeight } from "@/lib/units";
 
@@ -39,6 +40,7 @@ const STATUS_COLOR: Record<string, string> = {
 type Phase = "loading" | "no-plan" | "ready";
 
 export default function DashboardPage() {
+  const { localizedHref } = useLanguage();
   const { unit } = useUnit();
   const [phase, setPhase] = useState<Phase>("loading");
   const [allPlans, setAllPlans] = useState<any[]>([]);
@@ -162,7 +164,7 @@ export default function DashboardPage() {
       <EmptyState
         title="Нямаш активен план"
         description="Избери програма от каталога — калкулаторът работи веднага, без регистрация, ако само искаш да провериш числата."
-        ctaHref="/programs"
+        ctaHref={localizedHref("/programs")}
         ctaLabel="Разгледай програмите"
       />
     );
@@ -198,7 +200,7 @@ export default function DashboardPage() {
             <p className="mt-1 text-chalkDim">От {startDate}</p>
           </div>
           <Link
-            href="/today"
+            href={localizedHref("/today")}
             className="inline-flex items-center gap-2 border-2 border-amber bg-amber px-5 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
           >
             Днешна тренировка →
