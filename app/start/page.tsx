@@ -51,6 +51,7 @@ function StartPageInner() {
     deadlift: searchParams.get("deadlift") ?? "",
     overhead_press: searchParams.get("press") ?? "",
   });
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [planReady, setPlanReady] = useState(false);
 
   useEffect(() => {
@@ -122,6 +123,7 @@ function StartPageInner() {
         id: userId,
         display_name: displayName || email,
         email,
+        marketing_opt_in: marketingOptIn,
       });
 
       // 2. тренировъчен профил
@@ -448,6 +450,16 @@ function StartPageInner() {
                   ))}
                 </div>
               </div>
+
+              <label className="flex items-start gap-3 text-sm text-chalkDim">
+                <input
+                  type="checkbox"
+                  checked={marketingOptIn}
+                  onChange={(e) => setMarketingOptIn(e.target.checked)}
+                  className="mt-1"
+                />
+                {s.marketingLabel}
+              </label>
 
               {errorMessage && <p className="text-sm text-rust">{errorMessage}</p>}
 
