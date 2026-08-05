@@ -66,6 +66,13 @@ export default function AdminPage() {
           (прогресия, проценти) си остава в кода — тук се пипа само текст и настройки.
         </p>
 
+        <Link
+          href="/admin/users"
+          className="mt-4 inline-block text-sm text-steelLight underline-offset-4 hover:underline"
+        >
+          → Управление на потребители (Free/Pro нива)
+        </Link>
+
         <div className="mt-10 grid gap-px overflow-hidden border border-white/10 bg-white/10">
           {programs.map((p) => (
             <Link
