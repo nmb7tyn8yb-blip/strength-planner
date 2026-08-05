@@ -5,6 +5,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
 import LoadingScreen from "@/components/loading-screen";
 import EmptyState from "@/components/empty-state";
+import { useUnit } from "@/components/unit-provider";
+import { displayWeight, inputToKg } from "@/lib/units";
 import ProductRecommendations from "@/components/product-recommendations";
 import {
   completeStartingStrengthWorkout,
@@ -55,6 +57,7 @@ interface WorkoutSetRow {
 type Phase = "loading" | "no-plan" | "unsupported" | "workout" | "failure-reason" | "confirm-max" | "submitting" | "done" | "error";
 
 export default function TodayPage() {
+  const { unit } = useUnit();
   const [phase, setPhase] = useState<Phase>("loading");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -150,7 +153,7 @@ export default function TodayPage() {
     setSets(setsData);
     setActualReps(Object.fromEntries(setsData.map((s) => [s.id, 0])));
     const heaviestSet = setsData.reduce((max, s) => (s.planned_weight > max ? s.planned_weight : max), 0);
-    setConfirmedMax(String(heaviestSet));
+    setConfirmedMax(String(displayWeight(heaviestSet, unit)));
     setPhase("workout");
   }
 
@@ -350,7 +353,7 @@ export default function TodayPage() {
         workout.id,
         plan.settings.surovetsky_state,
         next,
-        workout.is_max_test ? Number(confirmedMax) : undefined
+        workout.is_max_test ? inputToKg(Number(confirmedMax), unit) : undefined
       );
       setNextDate(next);
       setPhase("done");
@@ -613,8 +616,8 @@ export default function TodayPage() {
                             {s.planned_weight > 0 && (
                               <>
                                 <span className="font-display text-2xl font-bold text-chalk">
-                                  {s.planned_weight}
-                                  <span className="ml-1 text-sm font-normal text-chalkDim">kg</span>
+                                  {displayWeight(s.planned_weight, unit)}
+                                  <span className="ml-1 text-sm font-normal text-chalkDim">{unit}</span>
                                 </span>
                                 <span className="text-chalkDim">×</span>
                               </>
@@ -626,19 +629,22 @@ export default function TodayPage() {
                           </div>
                           {s.planned_weight === 0 && (
                             <div className="mt-1 flex items-center gap-2">
-                              <span className="text-xs text-chalkDim">С колко кг?</span>
+                              <span className="text-xs text-chalkDim">С колко {unit}?</span>
                               <input
                                 type="number"
                                 min={0}
                                 step={0.5}
-                                value={actualWeights[s.id] ?? ""}
+                                value={actualWeights[s.id] !== undefined ? displayWeight(actualWeights[s.id], unit) : ""}
                                 onChange={(e) =>
-                                  setActualWeights({ ...actualWeights, [s.id]: Number(e.target.value) || 0 })
+                                  setActualWeights({
+                                    ...actualWeights,
+                                    [s.id]: inputToKg(Number(e.target.value) || 0, unit),
+                                  })
                                 }
                                 placeholder="напр. 20"
                                 className="w-16 border border-white/15 bg-transparent px-2 py-1 text-center text-xs text-chalk placeholder:text-chalkDim/50 focus:border-amber"
                               />
-                              <span className="text-xs text-chalkDim">kg (по избор)</span>
+                              <span className="text-xs text-chalkDim">{unit} (по избор)</span>
                             </div>
                           )}
                           {(s.set_type === "test" || s.is_paused) && (
@@ -755,14 +761,17 @@ export default function TodayPage() {
               Това е "проходката" — истинският опит за нов максимум, не планираната
               тежест. Въведи реално постигнатото, дори ако е различно от плана.
             </p>
-            <input
-              type="number"
-              min={0}
-              step={0.5}
-              value={confirmedMax}
-              onChange={(e) => setConfirmedMax(e.target.value)}
-              className="mt-4 w-full border-2 border-white/15 bg-transparent px-4 py-3 text-chalk focus:border-amber"
-            />
+            <div className="mt-4 flex items-center gap-2">
+              <input
+                type="number"
+                min={0}
+                step={0.5}
+                value={confirmedMax}
+                onChange={(e) => setConfirmedMax(e.target.value)}
+                className="w-full border-2 border-white/15 bg-transparent px-4 py-3 text-chalk focus:border-amber"
+              />
+              <span className="text-chalkDim">{unit}</span>
+            </div>
             <button
               onClick={handleFinishSurovetsky}
               className="mt-4 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
