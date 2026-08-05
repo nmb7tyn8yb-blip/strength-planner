@@ -31,19 +31,24 @@ interface DetailedDescription {
 interface ProgramRow {
   slug: string;
   name: string;
+  name_en: string | null;
   description: string | null;
+  description_en: string | null;
   level: string;
   primary_goal: string;
   days_per_week: number;
   duration_weeks: number | null;
   required_equipment: string[] | null;
   failure_rule_summary: string | null;
+  failure_rule_summary_en: string | null;
   recommendation_profile: RecommendationProfile;
   detailed_description: DetailedDescription | null;
+  pitch_en: string | null;
+  detailed_description_en: DetailedDescription | null;
 }
 
 export default function ProgramDetailPage() {
-  const { t, localizedHref } = useLanguage();
+  const { t, localizedHref, locale } = useLanguage();
   const d = t.programDetail;
   const params = useParams();
   const slug = params.slug as string;
@@ -74,6 +79,13 @@ export default function ProgramDetailPage() {
     return <LoadingScreen />;
   }
 
+  const isEn = locale === "en";
+  const displayName = isEn && program.name_en ? program.name_en : program.name;
+  const displayDescription = isEn && program.description_en ? program.description_en : program.description;
+  const displayPitch = isEn && program.pitch_en ? program.pitch_en : program.recommendation_profile.pitch;
+  const displayDetailed = isEn && program.detailed_description_en ? program.detailed_description_en : program.detailed_description;
+  const displayFailureRule = isEn && program.failure_rule_summary_en ? program.failure_rule_summary_en : program.failure_rule_summary;
+
   const p = program.recommendation_profile;
 
   const otherSportsText = {
@@ -90,11 +102,11 @@ export default function ProgramDetailPage() {
         </Link>
 
         <h1 className="mt-4 font-display text-4xl font-semibold leading-tight md:text-5xl">
-          {program.name}
+          {displayName}
         </h1>
 
-        {program.description && (
-          <p className="mt-4 text-lg leading-relaxed text-chalkDim">{program.description}</p>
+        {displayDescription && (
+          <p className="mt-4 text-lg leading-relaxed text-chalkDim">{displayDescription}</p>
         )}
 
         {/* Ключови показатели */}
@@ -110,38 +122,38 @@ export default function ProgramDetailPage() {
 
         {/* Pitch */}
         <div className="mt-8 border-l-2 border-amber pl-5">
-          <p className="text-lg text-chalk">{p.pitch}</p>
+          <p className="text-lg text-chalk">{displayPitch}</p>
         </div>
 
         {/* Подробно описание */}
-        {program.detailed_description && (
+        {displayDetailed && (
           <div className="mt-10 grid gap-8">
-            {program.detailed_description.overview && (
+            {displayDetailed.overview && (
               <div>
                 <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
                   {d.overviewTitle}
                 </h2>
-                <p className="mt-2 leading-relaxed text-chalk">{program.detailed_description.overview}</p>
+                <p className="mt-2 leading-relaxed text-chalk">{displayDetailed.overview}</p>
               </div>
             )}
 
-            {program.detailed_description.how_it_works && (
+            {displayDetailed.how_it_works && (
               <div>
                 <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
                   {d.howItWorksTitle}
                 </h2>
-                <p className="mt-2 leading-relaxed text-chalk">{program.detailed_description.how_it_works}</p>
+                <p className="mt-2 leading-relaxed text-chalk">{displayDetailed.how_it_works}</p>
               </div>
             )}
 
             <div className="grid gap-8 sm:grid-cols-2">
-              {program.detailed_description.best_for && program.detailed_description.best_for.length > 0 && (
+              {displayDetailed.best_for && displayDetailed.best_for.length > 0 && (
                 <div>
                   <h2 className="font-display text-sm uppercase tracking-widest text-steelLight">
                     {d.bestForTitle}
                   </h2>
                   <ul className="mt-2 space-y-2">
-                    {program.detailed_description.best_for.map((item, i) => (
+                    {displayDetailed.best_for.map((item, i) => (
                       <li key={i} className="flex gap-2 text-sm leading-relaxed text-chalk">
                         <span className="text-steelLight">✓</span> {item}
                       </li>
@@ -150,14 +162,14 @@ export default function ProgramDetailPage() {
                 </div>
               )}
 
-              {program.detailed_description.considerations &&
-                program.detailed_description.considerations.length > 0 && (
+              {displayDetailed.considerations &&
+                displayDetailed.considerations.length > 0 && (
                   <div>
                     <h2 className="font-display text-sm uppercase tracking-widest text-amber">
                       {d.considerationsTitle}
                     </h2>
                     <ul className="mt-2 space-y-2">
-                      {program.detailed_description.considerations.map((item, i) => (
+                      {displayDetailed.considerations.map((item, i) => (
                         <li key={i} className="flex gap-2 text-sm leading-relaxed text-chalk">
                           <span className="text-amber">!</span> {item}
                         </li>
@@ -204,10 +216,10 @@ export default function ProgramDetailPage() {
           </div>
         </div>
 
-        {program.failure_rule_summary && (
+        {displayFailureRule && (
           <div className="mt-10 border border-white/15 p-6">
             <h2 className="font-display text-sm uppercase tracking-widest text-amber">{d.failureRuleTitle}</h2>
-            <p className="mt-2 text-chalkDim">{program.failure_rule_summary}</p>
+            <p className="mt-2 text-chalkDim">{displayFailureRule}</p>
           </div>
         )}
 
