@@ -163,6 +163,11 @@ export interface TranslationShape {
     juggernautSubtitle: (variant: string) => string;
     juggernautClassic: string;
     juggernautExcel: string;
+    emailCaptureTitle: string;
+    emailPlaceholder: string;
+    emailSubmit: string;
+    emailSubmitting: string;
+    emailSuccess: string;
   };
   start: {
     loading: string;
@@ -196,6 +201,7 @@ export interface TranslationShape {
     planNotReadyText: string;
     errorGeneric: string;
     retryButton: string;
+    marketingLabel: string;
   };
 }
 
@@ -388,6 +394,7 @@ export const translations: Record<Locale, TranslationShape> = {
         "Профилът и планът ти са запазени. Календарният екран за тази програма е в процес на изграждане — засега данните ти вече чакат готови в базата.",
       errorGeneric: "Нещо се обърка при запазването. Опитай пак.",
       retryButton: "Пробвай пак",
+      marketingLabel: "Искам да получавам полезни тренировъчни съвети по имейл (по избор)",
     },
     programCalc: {
       backToProgram: "← Назад към програмата",
@@ -424,6 +431,11 @@ export const translations: Record<Locale, TranslationShape> = {
       juggernautSubtitle: (variant) => `Тренировъчен максимум = 90% от въведения 1RM. ${variant}`,
       juggernautClassic: "Класически 16-седмичен вариант.",
       juggernautExcel: "Опростен 12-седмичен вариант.",
+      emailCaptureTitle: "Или само остави имейла си — ще ти пращаме полезни тренировъчни съвети, без да се регистрираш сега.",
+      emailPlaceholder: "твоят@имейл.com",
+      emailSubmit: "Абонирай ме",
+      emailSubmitting: "Изпращаме…",
+      emailSuccess: "Готово! Ще ти пишем с полезни съвети.",
     },
   },
   en: {
@@ -614,6 +626,7 @@ export const translations: Record<Locale, TranslationShape> = {
         "Your profile and plan are saved. The calendar screen for this program is still being built — your data is already waiting in the database.",
       errorGeneric: "Something went wrong while saving. Please try again.",
       retryButton: "Try again",
+      marketingLabel: "I'd like to receive useful training tips by email (optional)",
     },
     programCalc: {
       backToProgram: "← Back to program",
@@ -650,6 +663,11 @@ export const translations: Record<Locale, TranslationShape> = {
       juggernautSubtitle: (variant) => `Training max = 90% of the entered 1RM. ${variant}`,
       juggernautClassic: "Classic 16-week variant.",
       juggernautExcel: "Simplified 12-week variant.",
+      emailCaptureTitle: "Or just leave your email — we'll send useful training tips, no need to sign up now.",
+      emailPlaceholder: "your@email.com",
+      emailSubmit: "Subscribe me",
+      emailSubmitting: "Sending…",
+      emailSuccess: "Done! We'll be in touch with useful tips.",
     },
   },
 };
