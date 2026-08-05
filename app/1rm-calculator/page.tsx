@@ -33,7 +33,7 @@ export default function OneRepMaxCalculatorPage() {
 }
 
 function OneRepMaxCalculatorInner() {
-  const { t } = useLanguage();
+  const { t, localizedHref } = useLanguage();
   const c = t.calculator;
   const { unit } = useUnit();
   const searchParams = useSearchParams();
@@ -79,7 +79,7 @@ function OneRepMaxCalculatorInner() {
   return (
     <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
       <div className="mx-auto max-w-2xl">
-        <Link href="/" className="text-sm text-chalkDim hover:text-chalk">
+        <Link href={localizedHref("/")} className="text-sm text-chalkDim hover:text-chalk">
           ← {t.programs.backHome.replace("← ", "")}
         </Link>
 
