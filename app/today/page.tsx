@@ -727,7 +727,7 @@ export default function TodayPage() {
             </div>
 
             {todaysProductIds.length > 0 && (
-              <ProductRecommendations productIds={todaysProductIds} title="За днешната тренировка" />
+              <ProductRecommendations productIds={todaysProductIds} titleBg="За днешната тренировка" titleEn="For today's session" />
             )}
           </div>
         )}
