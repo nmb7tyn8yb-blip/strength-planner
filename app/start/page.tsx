@@ -25,7 +25,7 @@ export default function StartPage() {
 }
 
 function StartPageInner() {
-  const { t } = useLanguage();
+  const { t, localizedHref } = useLanguage();
   const s = t.start;
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -471,7 +471,7 @@ function StartPageInner() {
                   {s.planReadyText}
                 </p>
                 <a
-                  href="/today"
+                  href={localizedHref("/today")}
                   className="mt-6 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
                 >
                   {s.todayButton}
