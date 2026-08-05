@@ -242,7 +242,8 @@ export default function ProgramDetailPage() {
 
         <ProductRecommendations
           productIds={PROGRAM_PLACEMENT_MAP[program.slug]}
-          title={isEn ? "What you'll need for this program" : "Какво ще ти трябва за тази програма"}
+          titleBg="Какво ще ти трябва за тази програма"
+          titleEn="What you'll need for this program"
         />
       </div>
     </main>
