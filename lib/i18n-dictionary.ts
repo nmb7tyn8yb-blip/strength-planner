@@ -128,6 +128,42 @@ export interface TranslationShape {
     browseOthers: string;
     equipmentItems: Record<string, string>;
   };
+  programCalc: {
+    backToProgram: string;
+    title: string;
+    subtitle: string;
+    unsupportedText: string;
+    continueSignup: string;
+    ssNote: string;
+    hepburnNote: string;
+    inputLabel: string;
+    unknownMax: string;
+    placeholder: string;
+    calculateButton: string;
+    saveProgressText: string;
+    saveProgressButton: string;
+    prefilledNote: string;
+    warmup: string;
+    workingSets: string;
+    reps: string;
+    wendlerTitle: string;
+    wendlerSubtitle: string;
+    ssTitle: (n: string) => string;
+    ssSubtitleReduced: string;
+    ssSubtitleNormal: string;
+    ssWarmupNote: string;
+    hepburnTitle: string;
+    hepburnSubtitle: string;
+    hepburnAfter: string;
+    hepburnThisWeek: (w: number, unit: string) => string;
+    texasTitle: string;
+    texasSubtitle: string;
+    surovetskySubtitle: string;
+    juggernautTitle: string;
+    juggernautSubtitle: (variant: string) => string;
+    juggernautClassic: string;
+    juggernautExcel: string;
+  };
   start: {
     loading: string;
     signupTitle: string;
@@ -353,6 +389,42 @@ export const translations: Record<Locale, TranslationShape> = {
       errorGeneric: "Нещо се обърка при запазването. Опитай пак.",
       retryButton: "Пробвай пак",
     },
+    programCalc: {
+      backToProgram: "← Назад към програмата",
+      title: "Калкулатор — без регистрация",
+      subtitle: "Въведи максимумите си и виж реалния план веднага. Ще пазим нищо, докато сам не решиш да запазиш прогреса си.",
+      unsupportedText: "Калкулаторът за тази програма е в процес на изграждане — засега може да продължиш директно с регистрация, за да ти изготвим плана.",
+      continueSignup: "Продължи с регистрация →",
+      ssNote: "Официалната програма не смята по проценти — Rippetoe просто съветва да започнеш по-леко, отколкото мислиш, че можеш. Ще изчислим безопасна начална тежест от оценка за 5 повторения (формула на Brzycki + запас) — това е наша преценка, не фиксирано правило от оригинала. Тежестта бързо ще настигне истинската ти сила.",
+      hepburnNote: "Началната тежест ще бъде ~80% от максимума ти — това е документирано в оригиналния източник на метода, не наша преценка.",
+      inputLabel: "1RM (реален или приблизителен)",
+      unknownMax: "Не знаеш максимума? →",
+      placeholder: "напр. 60",
+      calculateButton: "Изчисли плана →",
+      saveProgressText: "Това е само първата стъпка. За пълния план, автоматична прогресия и календар по дати — запази прогреса си.",
+      saveProgressButton: "Запази прогреса си →",
+      prefilledNote: "Тежестите ти вече ще са попълнени — няма да ги пишеш втори път.",
+      warmup: "Загряване",
+      workingSets: "Работни серии",
+      reps: "повт.",
+      wendlerTitle: "Седмица 1 — твоят план",
+      wendlerSubtitle: "Тренировъчен максимум = 90% от въведения 1RM. Последната серия е AMRAP, следвана от FSL 5×5 — помощен обем, изрично препоръчан от Wendler.",
+      ssTitle: (n) => `Тренировка ${n} — твоята първа стъпка`,
+      ssSubtitleReduced: "Тежестите по-долу са консервативна оценка (5RM по формула + запас за безопасност) — не фиксирано правило от оригинала, а разумен, безопасен старт. Загряването е изчислено автоматично спрямо работната тежест.",
+      ssSubtitleNormal: "Тежестта расте на всяка следваща успешна тренировка. Загряването е изчислено автоматично спрямо работната тежест.",
+      ssWarmupNote: "",
+      hepburnTitle: "Седмица 1 — 1×3 + 7×2",
+      hepburnSubtitle: "Прогресията е седмична — тренираш този lift 2 пъти седмично (по класическото разписание), с една и съща схема през цялата седмица. Всяка следваща седмица една двойка става тройка, докато стигнеш 8×3 — тогава се добавя тежест и цикълът започва отново.",
+      hepburnAfter: "след 8×3",
+      hepburnThisWeek: (w, unit) => `Работни серии тази седмица (1×3 + 7×2 — ${w} ${unit})`,
+      texasTitle: "Понеделник — обемен ден",
+      texasSubtitle: "Тежестите са оценени от твоя 1RM (формула на Brzycki за 5RM) — Texas Method реално иска текущ 5RM, не максимум.",
+      surovetskySubtitle: "Точните проценти от оригиналните таблици, изчислени от твоя реален максимум.",
+      juggernautTitle: "Седмица 1 (натрупване)",
+      juggernautSubtitle: (variant) => `Тренировъчен максимум = 90% от въведения 1RM. ${variant}`,
+      juggernautClassic: "Класически 16-седмичен вариант.",
+      juggernautExcel: "Опростен 12-седмичен вариант.",
+    },
   },
   en: {
     nav: {
@@ -542,6 +614,42 @@ export const translations: Record<Locale, TranslationShape> = {
         "Your profile and plan are saved. The calendar screen for this program is still being built — your data is already waiting in the database.",
       errorGeneric: "Something went wrong while saving. Please try again.",
       retryButton: "Try again",
+    },
+    programCalc: {
+      backToProgram: "← Back to program",
+      title: "Calculator — no signup",
+      subtitle: "Enter your maxes and see the real plan right away. We won't save anything until you decide to save your progress.",
+      unsupportedText: "The calculator for this program is still being built — for now you can sign up directly and we'll prepare your plan.",
+      continueSignup: "Continue with sign up →",
+      ssNote: "The official program doesn't use percentages — Rippetoe simply advises starting lighter than you think you can. We'll calculate a safe starting weight from a 5-rep estimate (Brzycki formula + buffer) — this is our own judgment call, not a fixed rule from the original. The weight will quickly catch up to your real strength.",
+      hepburnNote: "The starting weight will be ~80% of your max — this is documented in the original source of the method, not our own guess.",
+      inputLabel: "1RM (real or estimated)",
+      unknownMax: "Don't know your max? →",
+      placeholder: "e.g. 60",
+      calculateButton: "Calculate plan →",
+      saveProgressText: "This is just the first step. For the full plan, automatic progression, and a dated calendar — save your progress.",
+      saveProgressButton: "Save my progress →",
+      prefilledNote: "Your weights will already be filled in — no need to type them twice.",
+      warmup: "Warm-up",
+      workingSets: "Working sets",
+      reps: "reps",
+      wendlerTitle: "Week 1 — your plan",
+      wendlerSubtitle: "Training max = 90% of the entered 1RM. The last set is AMRAP, followed by FSL 5×5 — assistance volume explicitly recommended by Wendler.",
+      ssTitle: (n) => `Workout ${n} — your first step`,
+      ssSubtitleReduced: "The weights below are a conservative estimate (formula-based 5RM + safety buffer) — not a fixed rule from the original, but a sensible, safe start. Warm-up is calculated automatically from the working weight.",
+      ssSubtitleNormal: "The weight increases every successful workout. Warm-up is calculated automatically from the working weight.",
+      ssWarmupNote: "",
+      hepburnTitle: "Week 1 — 1×3 + 7×2",
+      hepburnSubtitle: "Progression is weekly — you train this lift twice a week (per the classic schedule), with the same scheme all week. Each following week one double becomes a triple, until you reach 8×3 — then weight is added and the cycle restarts.",
+      hepburnAfter: "after 8×3",
+      hepburnThisWeek: (w, unit) => `This week's working sets (1×3 + 7×2 — ${w} ${unit})`,
+      texasTitle: "Monday — volume day",
+      texasSubtitle: "Weights are estimated from your 1RM (Brzycki 5RM formula) — Texas Method actually wants a current 5RM, not a max.",
+      surovetskySubtitle: "Exact percentages from the original tables, calculated from your real max.",
+      juggernautTitle: "Week 1 (accumulation)",
+      juggernautSubtitle: (variant) => `Training max = 90% of the entered 1RM. ${variant}`,
+      juggernautClassic: "Classic 16-week variant.",
+      juggernautExcel: "Simplified 12-week variant.",
     },
   },
 };
