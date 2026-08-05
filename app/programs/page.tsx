@@ -1,8 +1,9 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
-
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+import { useLanguage } from "@/components/language-provider";
 
 interface RecommendationProfile {
   pitch: string;
@@ -20,62 +21,49 @@ interface ProgramRow {
   recommendation_profile: RecommendationProfile;
 }
 
-const LEVEL_LABEL: Record<string, string> = {
-  beginner: "Начинаещ",
-  intermediate: "Средно напреднал",
-  advanced: "Напреднал",
-};
+export default function ProgramsPage() {
+  const { t } = useLanguage();
+  const p = t.programs;
 
-const GOAL_LABEL: Record<string, string> = {
-  strength: "Сила",
-  strength_mass: "Сила и маса",
-  bench_focus: "Основно лежанка",
-  powerlifting_total: "Трибой",
-};
+  const [programs, setPrograms] = useState<ProgramRow[] | null>(null);
+  const [error, setError] = useState(false);
 
-export default async function ProgramsPage() {
-  const { data: programs, error } = await supabase
-    .from("programs")
-    .select("*")
-    .order("name");
+  useEffect(() => {
+    supabase
+      .from("programs")
+      .select("*")
+      .order("name")
+      .then(({ data, error }) => {
+        if (error) setError(true);
+        setPrograms(data as ProgramRow[]);
+      });
+  }, []);
 
   return (
     <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
       <div className="mx-auto max-w-6xl">
         <Link href="/" className="text-sm text-chalkDim hover:text-chalk">
-          ← Начало
+          {p.backHome}
         </Link>
 
-        <h1 className="mt-4 font-display text-4xl font-semibold md:text-5xl">
-          Каталог с програми
-        </h1>
-        <p className="mt-3 max-w-xl text-chalkDim">
-          Всяка програма е кодирана прецизно по оригинала — проценти, серии, повторения,
-          правила за прогресия. Изрично обозначените модификации (напр. съкратени варианти)
-          също следват точна, ясно описана логика. Не избираш описание, избираш реален алгоритъм.
-        </p>
+        <h1 className="mt-4 font-display text-4xl font-semibold md:text-5xl">{p.title}</h1>
+        <p className="mt-3 max-w-xl text-chalkDim">{p.subtitle}</p>
 
         <div className="mt-6">
           <Link
             href="/quiz"
             className="inline-flex items-center gap-2 text-sm text-amber underline-offset-4 hover:underline"
           >
-            Не си сигурен коя? Отговори на въпросника →
+            {p.quizPrompt}
           </Link>
         </div>
 
-        {error && (
-          <p className="mt-10 text-chalkDim">
-            Не успяхме да заредим каталога в момента. Презареди страницата след малко.
-          </p>
-        )}
+        {error && <p className="mt-10 text-chalkDim">{p.loadError}</p>}
 
-        {!error && programs && programs.length === 0 && (
-          <p className="mt-10 text-chalkDim">Каталогът все още е празен.</p>
-        )}
+        {!error && programs && programs.length === 0 && <p className="mt-10 text-chalkDim">{p.empty}</p>}
 
         <div className="mt-10 grid gap-px overflow-hidden border border-white/10 bg-white/10 md:grid-cols-2">
-          {(programs as ProgramRow[] | null)?.map((program) => (
+          {programs?.map((program) => (
             <Link
               key={program.slug}
               href={`/programs/${program.slug}`}
@@ -84,16 +72,14 @@ export default async function ProgramsPage() {
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-display text-[11px] uppercase tracking-widest text-amber">
-                    {LEVEL_LABEL[program.level] ?? program.level}
+                    {(p.levels as Record<string, string>)[program.level] ?? program.level}
                   </span>
                   <span className="text-chalkDim">·</span>
                   <span className="font-display text-[11px] uppercase tracking-widest text-steelLight">
-                    {GOAL_LABEL[program.primary_goal] ?? program.primary_goal}
+                    {(p.goals as Record<string, string>)[program.primary_goal] ?? program.primary_goal}
                   </span>
                 </div>
-                <h2 className="mt-2 font-display text-xl font-semibold text-chalk">
-                  {program.name}
-                </h2>
+                <h2 className="mt-2 font-display text-xl font-semibold text-chalk">{program.name}</h2>
                 <p className="mt-2 text-sm leading-relaxed text-chalkDim">
                   {program.recommendation_profile?.pitch}
                 </p>
@@ -101,12 +87,10 @@ export default async function ProgramsPage() {
 
               <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-chalkDim">
                 <span>
-                  {program.days_per_week} дни/седмица
-                  {program.duration_weeks ? ` · ${program.duration_weeks} седмици` : " · циклична"}
+                  {program.days_per_week} {p.daysPerWeek}
+                  {program.duration_weeks ? ` · ${program.duration_weeks} ${p.weeks}` : ` · ${p.cyclic}`}
                 </span>
-                <span className="text-amber opacity-0 transition group-hover:opacity-100">
-                  Виж →
-                </span>
+                <span className="text-amber opacity-0 transition group-hover:opacity-100">{p.view}</span>
               </div>
             </Link>
           ))}
