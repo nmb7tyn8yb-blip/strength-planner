@@ -4,20 +4,22 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
-
-const NAV_LINKS = [
-  { href: "/programs", label: "Програми" },
-  { href: "/create-program", label: "Създай програма" },
-  { href: "/1rm-calculator", label: "1RM Калкулатор" },
-  { href: "/quiz", label: "Въпросник" },
-  { href: "/dashboard", label: "Табло" },
-];
+import { useLanguage } from "@/components/language-provider";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { locale, setLocale, t } = useLanguage();
   const [email, setEmail] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const NAV_LINKS = [
+    { href: "/programs", label: t.nav.programs },
+    { href: "/create-program", label: t.nav.createProgram },
+    { href: "/1rm-calculator", label: t.nav.calculator },
+    { href: "/quiz", label: t.nav.quiz },
+    { href: "/dashboard", label: t.nav.dashboard },
+  ];
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
@@ -29,7 +31,6 @@ export default function Navbar() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // затваря менюто автоматично при смяна на страница
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
@@ -40,6 +41,25 @@ export default function Navbar() {
     setMenuOpen(false);
     router.push("/");
     router.refresh();
+  }
+
+  function LanguageSwitch({ className = "" }: { className?: string }) {
+    return (
+      <div className={`flex border border-white/15 text-xs font-semibold ${className}`}>
+        <button
+          onClick={() => setLocale("bg")}
+          className={`px-2 py-1 transition ${locale === "bg" ? "bg-amber text-graphite" : "text-chalkDim hover:text-chalk"}`}
+        >
+          BG
+        </button>
+        <button
+          onClick={() => setLocale("en")}
+          className={`px-2 py-1 transition ${locale === "en" ? "bg-amber text-graphite" : "text-chalkDim hover:text-chalk"}`}
+        >
+          EN
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -69,7 +89,9 @@ export default function Navbar() {
             })}
           </ul>
 
-          <div className="ml-2 flex items-center gap-3 border-l border-white/10 pl-3">
+          <LanguageSwitch className="ml-3" />
+
+          <div className="ml-3 flex items-center gap-3 border-l border-white/10 pl-3">
             {email ? (
               <>
                 <span className="text-xs text-chalkDim">{email}</span>
@@ -77,7 +99,7 @@ export default function Navbar() {
                   onClick={handleLogout}
                   className="border-2 border-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-chalkDim transition hover:border-rust hover:text-rust"
                 >
-                  Изход
+                  {t.nav.logout}
                 </button>
               </>
             ) : (
@@ -85,7 +107,7 @@ export default function Navbar() {
                 href="/start"
                 className="border-2 border-amber px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-amber transition hover:bg-amber hover:text-graphite"
               >
-                Вход
+                {t.nav.login}
               </Link>
             )}
           </div>
@@ -94,7 +116,7 @@ export default function Navbar() {
         {/* Мобилен бутон-хамбургер */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Отвори менюто"
+          aria-label="Menu"
           aria-expanded={menuOpen}
           className="flex flex-col gap-1.5 p-2 md:hidden"
         >
@@ -125,23 +147,21 @@ export default function Navbar() {
             })}
           </ul>
 
-          <div className="mt-3 border-t border-white/10 pt-3">
+          <div className="mt-3 flex items-center justify-between border-t border-white/10 px-3 pt-3">
+            <LanguageSwitch />
             {email ? (
-              <div className="flex items-center justify-between px-3">
-                <span className="text-xs text-chalkDim">{email}</span>
-                <button
-                  onClick={handleLogout}
-                  className="border-2 border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-chalkDim transition hover:border-rust hover:text-rust"
-                >
-                  Изход
-                </button>
-              </div>
+              <button
+                onClick={handleLogout}
+                className="border-2 border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-chalkDim transition hover:border-rust hover:text-rust"
+              >
+                {t.nav.logout}
+              </button>
             ) : (
               <Link
                 href="/start"
-                className="mx-3 flex items-center justify-center border-2 border-amber px-4 py-3 text-sm font-semibold uppercase tracking-wide text-amber transition hover:bg-amber hover:text-graphite"
+                className="border-2 border-amber px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber transition hover:bg-amber hover:text-graphite"
               >
-                Вход
+                {t.nav.login}
               </Link>
             )}
           </div>
