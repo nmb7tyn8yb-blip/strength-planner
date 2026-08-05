@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
 import LoadingScreen from "@/components/loading-screen";
 import EmptyState from "@/components/empty-state";
+import ProductRecommendations from "@/components/product-recommendations";
 import {
   completeStartingStrengthWorkout,
   completeWendlerWorkout,
@@ -527,6 +528,8 @@ export default function TodayPage() {
           >
             Виж следващата тренировка →
           </button>
+
+          <ProductRecommendations placement="post-workout" />
         </div>
       </main>
     );
