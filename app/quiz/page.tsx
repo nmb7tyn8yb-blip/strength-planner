@@ -15,7 +15,7 @@ import { useLanguage } from "@/components/language-provider";
 type Phase = "asking" | "loading" | "results" | "error";
 
 export default function QuizPage() {
-  const { t } = useLanguage();
+  const { t, localizedHref } = useLanguage();
   const q = t.quiz;
 
   const [stepIndex, setStepIndex] = useState(0);
@@ -187,7 +187,7 @@ export default function QuizPage() {
                   )}
 
                   <Link
-                    href={`/programs/${r.program.slug}`}
+                    href={localizedHref(`/programs/${r.program.slug}`)}
                     className="mt-5 inline-flex items-center gap-2 border-2 border-amber bg-amber px-5 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
                   >
                     {q.viewProgram}
