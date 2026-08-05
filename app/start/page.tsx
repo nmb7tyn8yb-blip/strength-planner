@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
+import { useLanguage } from "@/components/language-provider";
 import { createFirstStartingStrengthWorkout, createFirstWendlerWorkout, createFirstHepburnWorkout, createFirstTexasWorkout, createFirstSurovetskyWorkout, createFirstJuggernautClassicWorkout, createFirstJuggernautExcelWorkout } from "@/lib/workout-engine";
 
 type Step = "loading" | "auth" | "profile" | "saving" | "done" | "error";
@@ -24,6 +25,8 @@ export default function StartPage() {
 }
 
 function StartPageInner() {
+  const { t } = useLanguage();
+  const s = t.start;
   const searchParams = useSearchParams();
   const router = useRouter();
   const programSlug = searchParams.get("program") ?? "";
@@ -108,7 +111,7 @@ function StartPageInner() {
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
     if (!userId) {
-      setErrorMessage("Сесията изтече — влез отново.");
+      setErrorMessage(s.sessionExpired);
       setStep("auth");
       return;
     }
@@ -285,7 +288,7 @@ function StartPageInner() {
       setStep("done");
       setPlanReady(firstWorkoutCreated);
     } catch (err) {
-      setErrorMessage("Нещо се обърка при запазването. Опитай пак.");
+      setErrorMessage(s.errorGeneric);
       setStep("error");
     }
   }
@@ -293,22 +296,22 @@ function StartPageInner() {
   return (
     <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
       <div className="mx-auto max-w-xl">
-        {step === "loading" && <p className="text-chalkDim">Зареждане…</p>}
+        {step === "loading" && <p className="text-chalkDim">{s.loading}</p>}
 
         {step === "auth" && (
           <>
             <h1 className="font-display text-3xl font-semibold">
-              {authMode === "signup" ? "Направи профил" : "Влез в профила си"}
+              {authMode === "signup" ? s.signupTitle : s.loginTitle}
             </h1>
             <p className="mt-2 text-chalkDim">
-              Нужен е, за да пазим твоя календар, максимуми и прогрес.
+              {s.authSubtitle}
             </p>
 
             <form onSubmit={handleAuthSubmit} className="mt-8 grid gap-4">
               <input
                 type="email"
                 required
-                placeholder="Имейл"
+                placeholder={s.emailPlaceholder}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="border-2 border-white/15 bg-transparent px-4 py-3 text-chalk placeholder:text-chalkDim focus:border-amber"
@@ -317,7 +320,7 @@ function StartPageInner() {
                 type="password"
                 required
                 minLength={6}
-                placeholder="Парола (мин. 6 символа)"
+                placeholder={s.passwordPlaceholder}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="border-2 border-white/15 bg-transparent px-4 py-3 text-chalk placeholder:text-chalkDim focus:border-amber"
@@ -329,7 +332,7 @@ function StartPageInner() {
                 type="submit"
                 className="mt-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
               >
-                {authMode === "signup" ? "Регистрирай се" : "Влез"}
+                {authMode === "signup" ? s.signupButton : s.loginButton}
               </button>
             </form>
 
@@ -337,25 +340,25 @@ function StartPageInner() {
               onClick={() => setAuthMode(authMode === "signup" ? "login" : "signup")}
               className="mt-4 text-sm text-chalkDim underline-offset-4 hover:text-chalk hover:underline"
             >
-              {authMode === "signup" ? "Вече имаш профил? Влез" : "Нямаш профил? Регистрирай се"}
+              {authMode === "signup" ? s.switchToLogin : s.switchToSignup}
             </button>
           </>
         )}
 
         {(step === "profile" || step === "saving") && (
           <>
-            <h1 className="font-display text-3xl font-semibold">Твоят профил</h1>
+            <h1 className="font-display text-3xl font-semibold">{s.profileTitle}</h1>
             <p className="mt-2 text-chalkDim">
-              Нужно е само веднъж — после винаги можеш да го редактираш.
+              {s.profileSubtitle}
             </p>
 
             <form onSubmit={handleProfileSubmit} className="mt-8 grid gap-6">
               <div>
-                <label className="text-xs uppercase tracking-widest text-chalkDim">Име</label>
+                <label className="text-xs uppercase tracking-widest text-chalkDim">{s.nameLabel}</label>
                 <input
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Псевдоним"
+                  placeholder={s.namePlaceholder}
                   className="mt-1 w-full border-2 border-white/15 bg-transparent px-4 py-3 text-chalk placeholder:text-chalkDim focus:border-amber"
                 />
               </div>
@@ -363,36 +366,36 @@ function StartPageInner() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs uppercase tracking-widest text-chalkDim">
-                    Тренировъчен стаж
+                    {s.experienceLabel}
                   </label>
                   <select
                     value={experienceLevel}
                     onChange={(e) => setExperienceLevel(e.target.value)}
                     className="mt-1 w-full border-2 border-white/15 bg-graphite px-4 py-3 text-chalk focus:border-amber"
                   >
-                    <option value="beginner">Начинаещ</option>
-                    <option value="intermediate">Средно напреднал</option>
-                    <option value="advanced">Напреднал</option>
+                    <option value="beginner">{t.programs.levels.beginner}</option>
+                    <option value="intermediate">{t.programs.levels.intermediate}</option>
+                    <option value="advanced">{t.programs.levels.advanced}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="text-xs uppercase tracking-widest text-chalkDim">
-                    Мерни единици
+                    {s.unitsLabel}
                   </label>
                   <select
                     value={unitSystem}
                     onChange={(e) => setUnitSystem(e.target.value as "kg" | "lb")}
                     className="mt-1 w-full border-2 border-white/15 bg-graphite px-4 py-3 text-chalk focus:border-amber"
                   >
-                    <option value="kg">Килограми</option>
-                    <option value="lb">Паундове</option>
+                    <option value="kg">{s.unitsKg}</option>
+                    <option value="lb">{s.unitsLb}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="text-xs uppercase tracking-widest text-chalkDim">
-                    Стъпка на дисковете (kg)
+                    {s.plateStepLabel}
                   </label>
                   <select
                     value={plateIncrement}
@@ -408,7 +411,7 @@ function StartPageInner() {
 
                 <div>
                   <label className="text-xs uppercase tracking-widest text-chalkDim">
-                    Дни седмично
+                    {s.daysPerWeekLabel}
                   </label>
                   <select
                     value={sessionsPerWeek}
@@ -426,17 +429,17 @@ function StartPageInner() {
 
               <div>
                 <label className="text-xs uppercase tracking-widest text-chalkDim">
-                  Стартови максимуми (kg) — попълни каквото знаеш
+                  {s.startingMaxesLabel}
                 </label>
                 <div className="mt-2 grid grid-cols-2 gap-4">
                   {PRIMARY_LIFTS.map((lift) => (
                     <div key={lift.key}>
-                      <span className="text-sm text-chalk">{lift.label}</span>
+                      <span className="text-sm text-chalk">{t.calculator.exercises[lift.key]}</span>
                       <input
                         type="number"
                         min={0}
                         step={0.5}
-                        placeholder="напр. 80"
+                        placeholder={s.maxPlaceholder}
                         value={maxes[lift.key] ?? ""}
                         onChange={(e) => setMaxes({ ...maxes, [lift.key]: e.target.value })}
                         className="mt-1 w-full border-2 border-white/15 bg-transparent px-4 py-2 text-chalk placeholder:text-chalkDim focus:border-amber"
@@ -453,7 +456,7 @@ function StartPageInner() {
                 disabled={step === "saving"}
                 className="mt-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber disabled:opacity-50"
               >
-                {step === "saving" ? "Запазваме…" : "Създай моята програма"}
+                {step === "saving" ? s.savingButton : s.saveButton}
               </button>
             </form>
           </>
@@ -461,23 +464,22 @@ function StartPageInner() {
 
         {step === "done" && (
           <div className="py-12 text-center">
-            <h1 className="font-display text-3xl font-semibold text-amber">Готово!</h1>
+            <h1 className="font-display text-3xl font-semibold text-amber">{s.doneTitle}</h1>
             {planReady ? (
               <>
                 <p className="mt-4 text-chalkDim">
-                  Първата ти тренировка вече е готова, изчислена от твоите данни.
+                  {s.planReadyText}
                 </p>
                 <a
                   href="/today"
                   className="mt-6 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
                 >
-                  Към днешната тренировка →
+                  {s.todayButton}
                 </a>
               </>
             ) : (
               <p className="mt-4 text-chalkDim">
-                Профилът и планът ти са запазени. Календарният екран за тази програма е в
-                процес на изграждане — засега данните ти вече чакат готови в базата.
+                {s.planNotReadyText}
               </p>
             )}
           </div>
@@ -490,7 +492,7 @@ function StartPageInner() {
               onClick={() => setStep("profile")}
               className="mt-6 border-2 border-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-amber transition hover:bg-amber hover:text-graphite"
             >
-              Пробвай пак
+              {s.retryButton}
             </button>
           </div>
         )}
