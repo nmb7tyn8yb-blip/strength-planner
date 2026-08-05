@@ -128,6 +128,39 @@ export interface TranslationShape {
     browseOthers: string;
     equipmentItems: Record<string, string>;
   };
+  start: {
+    loading: string;
+    signupTitle: string;
+    loginTitle: string;
+    authSubtitle: string;
+    emailPlaceholder: string;
+    passwordPlaceholder: string;
+    signupButton: string;
+    loginButton: string;
+    switchToLogin: string;
+    switchToSignup: string;
+    sessionExpired: string;
+    profileTitle: string;
+    profileSubtitle: string;
+    nameLabel: string;
+    namePlaceholder: string;
+    experienceLabel: string;
+    unitsLabel: string;
+    unitsKg: string;
+    unitsLb: string;
+    plateStepLabel: string;
+    daysPerWeekLabel: string;
+    startingMaxesLabel: string;
+    maxPlaceholder: string;
+    saveButton: string;
+    savingButton: string;
+    doneTitle: string;
+    planReadyText: string;
+    todayButton: string;
+    planNotReadyText: string;
+    errorGeneric: string;
+    retryButton: string;
+  };
 }
 
 export const translations: Record<Locale, TranslationShape> = {
@@ -286,6 +319,40 @@ export const translations: Record<Locale, TranslationShape> = {
         стойка: "силова рамка (клетка с предпазни лостове — за самостоятелен клек/лежанка, без партньор)",
       },
     },
+    start: {
+      loading: "Зареждане…",
+      signupTitle: "Направи профил",
+      loginTitle: "Влез в профила си",
+      authSubtitle: "Нужен е, за да пазим твоя календар, максимуми и прогрес.",
+      emailPlaceholder: "Имейл",
+      passwordPlaceholder: "Парола (мин. 6 символа)",
+      signupButton: "Регистрирай се",
+      loginButton: "Влез",
+      switchToLogin: "Вече имаш профил? Влез",
+      switchToSignup: "Нямаш профил? Регистрирай се",
+      sessionExpired: "Сесията изтече — влез отново.",
+      profileTitle: "Твоят профил",
+      profileSubtitle: "Нужно е само веднъж — после винаги можеш да го редактираш.",
+      nameLabel: "Име",
+      namePlaceholder: "Псевдоним",
+      experienceLabel: "Тренировъчен стаж",
+      unitsLabel: "Мерни единици",
+      unitsKg: "Килограми",
+      unitsLb: "Паундове",
+      plateStepLabel: "Стъпка на дисковете (kg)",
+      daysPerWeekLabel: "Дни седмично",
+      startingMaxesLabel: "Стартови максимуми (kg) — попълни каквото знаеш",
+      maxPlaceholder: "напр. 80",
+      saveButton: "Създай моята програма",
+      savingButton: "Запазваме…",
+      doneTitle: "Готово!",
+      planReadyText: "Първата ти тренировка вече е готова, изчислена от твоите данни.",
+      todayButton: "Към днешната тренировка →",
+      planNotReadyText:
+        "Профилът и планът ти са запазени. Календарният екран за тази програма е в процес на изграждане — засега данните ти вече чакат готови в базата.",
+      errorGeneric: "Нещо се обърка при запазването. Опитай пак.",
+      retryButton: "Пробвай пак",
+    },
   },
   en: {
     nav: {
@@ -441,6 +508,40 @@ export const translations: Record<Locale, TranslationShape> = {
         дъмбели: "dumbbells (for accessory work)",
         стойка: "power rack (safety cage — for training squat/bench alone, without a spotter)",
       },
+    },
+    start: {
+      loading: "Loading…",
+      signupTitle: "Create an account",
+      loginTitle: "Log in",
+      authSubtitle: "Needed to save your calendar, maxes, and progress.",
+      emailPlaceholder: "Email",
+      passwordPlaceholder: "Password (min. 6 characters)",
+      signupButton: "Sign up",
+      loginButton: "Log in",
+      switchToLogin: "Already have an account? Log in",
+      switchToSignup: "No account yet? Sign up",
+      sessionExpired: "Your session expired — please log in again.",
+      profileTitle: "Your profile",
+      profileSubtitle: "Only needed once — you can always edit it later.",
+      nameLabel: "Name",
+      namePlaceholder: "Nickname",
+      experienceLabel: "Training experience",
+      unitsLabel: "Units",
+      unitsKg: "Kilograms",
+      unitsLb: "Pounds",
+      plateStepLabel: "Plate increment (kg)",
+      daysPerWeekLabel: "Days per week",
+      startingMaxesLabel: "Starting maxes (kg) — fill in what you know",
+      maxPlaceholder: "e.g. 80",
+      saveButton: "Create my program",
+      savingButton: "Saving…",
+      doneTitle: "Done!",
+      planReadyText: "Your first workout is ready, calculated from your numbers.",
+      todayButton: "Go to today's workout →",
+      planNotReadyText:
+        "Your profile and plan are saved. The calendar screen for this program is still being built — your data is already waiting in the database.",
+      errorGeneric: "Something went wrong while saving. Please try again.",
+      retryButton: "Try again",
     },
   },
 };
