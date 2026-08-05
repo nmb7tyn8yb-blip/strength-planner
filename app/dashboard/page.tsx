@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase-client";
 import { getCurrentWorkingWeights } from "@/lib/workout-engine";
 import LoadingScreen from "@/components/loading-screen";
 import EmptyState from "@/components/empty-state";
+import { useUnit } from "@/components/unit-provider";
+import { displayWeight } from "@/lib/units";
 
 const LIFT_LABEL: Record<string, string> = {
   squat: "Клек",
@@ -37,6 +39,7 @@ const STATUS_COLOR: Record<string, string> = {
 type Phase = "loading" | "no-plan" | "ready";
 
 export default function DashboardPage() {
+  const { unit } = useUnit();
   const [phase, setPhase] = useState<Phase>("loading");
   const [allPlans, setAllPlans] = useState<any[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
@@ -213,7 +216,7 @@ export default function DashboardPage() {
                   <div key={lift} className="bg-graphite p-5">
                     <span className="text-xs uppercase tracking-widest text-chalkDim">{LIFT_LABEL[lift]}</span>
                     <p className="mt-1 font-display text-2xl font-bold text-amber">
-                      {Math.round((weight as number) * 10) / 10} <span className="text-sm text-chalkDim">kg</span>
+                      {displayWeight(weight as number, unit)} <span className="text-sm text-chalkDim">{unit}</span>
                     </p>
                   </div>
                 ))}
@@ -263,7 +266,7 @@ export default function DashboardPage() {
                         .map((ex: any, i: number) => (
                           <li key={i} className="text-sm text-chalkDim">
                             {ex.exercise_name} — {ex.sets}×{ex.reps}
-                            {ex.weight_kg > 0 ? ` @ ${ex.weight_kg} kg` : ""}
+                            {ex.weight_kg > 0 ? ` @ ${displayWeight(ex.weight_kg, unit)} ${unit}` : ""}
                           </li>
                         ))}
                     </ul>
@@ -348,7 +351,7 @@ export default function DashboardPage() {
                   <tr key={i} className="border-b border-white/5">
                     <td className="p-3 text-chalkDim">{new Date(h.completed_at).toLocaleDateString("bg-BG")}</td>
                     <td className="p-3 text-chalk">{h.workout_sets?.exercises?.name}</td>
-                    <td className="p-3 text-chalk">{h.actual_weight > 0 ? `${h.actual_weight} kg` : "—"}</td>
+                    <td className="p-3 text-chalk">{h.actual_weight > 0 ? `${displayWeight(h.actual_weight, unit)} ${unit}` : "—"}</td>
                     <td className="p-3 text-chalk">{h.actual_reps}</td>
                   </tr>
                 ))}
