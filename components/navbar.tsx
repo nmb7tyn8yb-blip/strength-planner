@@ -6,12 +6,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
 import { useLanguage } from "@/components/language-provider";
 import { useUnit } from "@/components/unit-provider";
+import { usePlanTier } from "@/lib/use-plan-tier";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { locale, setLocale, t, localizedHref } = useLanguage();
   const { unit, setUnit } = useUnit();
+  const { isPro } = usePlanTier();
   const [email, setEmail] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -118,6 +120,11 @@ export default function Navbar() {
             {email ? (
               <>
                 <span className="text-xs text-chalkDim">{email}</span>
+                {isPro && (
+                  <span className="border border-amber/50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber">
+                    Pro
+                  </span>
+                )}
                 <button
                   onClick={handleLogout}
                   className="border-2 border-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-chalkDim transition hover:border-rust hover:text-rust"
