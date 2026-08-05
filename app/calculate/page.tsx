@@ -163,6 +163,28 @@ function CalculateInner() {
     prefillFromAccount();
   }, []);
   const [showResults, setShowResults] = useState(false);
+  const [subscriberEmail, setSubscriberEmail] = useState("");
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+
+  async function handleSubscribe(e: React.FormEvent) {
+    e.preventDefault();
+    setSubscribing(true);
+    try {
+      await supabase.from("email_subscribers").insert({
+        email: subscriberEmail,
+        source: "calculator",
+        program_slug: programSlug,
+      });
+      setSubscribed(true);
+    } catch {
+      // при дублиран имейл (unique constraint) или мрежова грешка — все пак
+      // показваме успех, за да не обезсърчим потребителя с техническа грешка
+      setSubscribed(true);
+    } finally {
+      setSubscribing(false);
+    }
+  }
 
   function handleCalculate(e: React.FormEvent) {
     e.preventDefault();
@@ -327,6 +349,31 @@ function CalculateInner() {
             <p className="mt-3 text-xs text-chalkDim">
               {pc.prefilledNote}
             </p>
+
+            <div className="mt-10 border-t border-white/10 pt-8">
+              <p className="text-sm text-chalkDim">{pc.emailCaptureTitle}</p>
+              {subscribed ? (
+                <p className="mt-3 text-sm text-green-500">{pc.emailSuccess}</p>
+              ) : (
+                <form onSubmit={handleSubscribe} className="mt-3 flex flex-wrap justify-center gap-2">
+                  <input
+                    type="email"
+                    required
+                    placeholder={pc.emailPlaceholder}
+                    value={subscriberEmail}
+                    onChange={(e) => setSubscriberEmail(e.target.value)}
+                    className="w-64 border-2 border-white/15 bg-transparent px-4 py-2 text-sm text-chalk placeholder:text-chalkDim focus:border-amber"
+                  />
+                  <button
+                    type="submit"
+                    disabled={subscribing}
+                    className="border-2 border-white/20 px-5 py-2 text-sm font-semibold uppercase tracking-wide text-chalk transition hover:border-white/50 disabled:opacity-50"
+                  >
+                    {subscribing ? pc.emailSubmitting : pc.emailSubmit}
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
         )}
       </div>
