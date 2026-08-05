@@ -73,7 +73,7 @@ export default function HomePage() {
               ))}
             </div>
             <p className="mt-6 text-center text-xs uppercase tracking-widest text-chalkDim">
-              Пример: тежестта расте всяка следваща тренировка — автоматично, каквато и програма да избереш
+              Пример: натоварването се променя автоматично според точните правила на избраната програма
             </p>
           </div>
         </div>
@@ -143,4 +143,3 @@ export default function HomePage() {
     </main>
   );
 }
-
