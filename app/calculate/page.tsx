@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
+import { useLanguage } from "@/components/language-provider";
 import { useUnit } from "@/components/unit-provider";
 import { displayWeight, inputToKg, type WeightUnit } from "@/lib/units";
 import {
@@ -110,6 +111,7 @@ export default function CalculatePage() {
 }
 
 function CalculateInner() {
+  const { localizedHref } = useLanguage();
   const { unit } = useUnit();
   const searchParams = useSearchParams();
   const programSlug = searchParams.get("program") ?? "";
@@ -201,7 +203,7 @@ function CalculateInner() {
   return (
     <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
       <div className="mx-auto max-w-2xl">
-        <Link href={`/programs/${programSlug}`} className="text-sm text-chalkDim hover:text-chalk">
+        <Link href={localizedHref(`/programs/${programSlug}`)} className="text-sm text-chalkDim hover:text-chalk">
           ← Назад към програмата
         </Link>
 
@@ -220,7 +222,7 @@ function CalculateInner() {
               продължиш директно с регистрация, за да ти изготвим плана.
             </p>
             <Link
-              href={`/start?program=${programSlug}`}
+              href={localizedHref(`/start?program=${programSlug}`)}
               className="mt-6 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
             >
               Продължи с регистрация →
@@ -255,9 +257,9 @@ function CalculateInner() {
                       {lift.label} — {inputLabel} ({unit})
                     </label>
                     <Link
-                      href={`/1rm-calculator?lift=${lift.key}&returnTo=${encodeURIComponent(
-                        `/calculate?program=${programSlug}&squat=${maxes.squat}&bench=${maxes.bench_press}&deadlift=${maxes.deadlift}&press=${maxes.overhead_press}`
-                      )}`}
+                      href={localizedHref(`/1rm-calculator?lift=${lift.key}&returnTo=${encodeURIComponent(
+                        localizedHref(`/calculate?program=${programSlug}&squat=${maxes.squat}&bench=${maxes.bench_press}&deadlift=${maxes.deadlift}&press=${maxes.overhead_press}`)
+                      )}`)}
                       className="text-xs text-steelLight underline-offset-4 hover:underline"
                     >
                       Не знаеш максимума? →
@@ -323,7 +325,7 @@ function CalculateInner() {
               календар по дати — запази прогреса си.
             </p>
             <Link
-              href={`/start?program=${programSlug}&squat=${maxes.squat}&bench=${maxes.bench_press}&deadlift=${maxes.deadlift}&press=${maxes.overhead_press}&max_type=1rm`}
+              href={localizedHref(`/start?program=${programSlug}&squat=${maxes.squat}&bench=${maxes.bench_press}&deadlift=${maxes.deadlift}&press=${maxes.overhead_press}&max_type=1rm`)}
               className="mt-5 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
             >
               Запази прогреса си →
