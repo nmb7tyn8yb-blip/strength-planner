@@ -81,7 +81,7 @@ export interface TranslationShape {
     calculateButton: string;
     resultTitle: string;
     strengthLevelPrefix: string; // "X.XX× bodyweight"
-    moreToNextTier: (kg: number, tier: string) => string;
+    moreToNextTier: (amount: number, unit: string, tier: string) => string;
     repTableTitle: string;
     formulaNote: string;
     strengthDisclaimer: string;
@@ -234,12 +234,12 @@ export const translations: Record<Locale, TranslationShape> = {
       subtitle: "Въведи тегло и повторения от скорошна тренировка — ще изчислим приблизителния ти едноповторен максимум по три формули.",
       exerciseLabel: "Упражнение",
       exercises: { squat: "Клек", bench_press: "Лежанка", deadlift: "Мъртва тяга", overhead_press: "Военна преса" },
-      weightLabel: "Вдигнато тегло (kg)",
+      weightLabel: "Вдигнато тегло",
       repsLabel: "Повторения",
       repsHint: "Най-точно е под 10 повторения.",
       compareShow: "+ Сравни спрямо ниво на сила (по тегло/пол/възраст)",
       compareHide: "− Скрий сравнение с ниво на сила",
-      bodyweightLabel: "Твоето тегло (kg)",
+      bodyweightLabel: "Твоето тегло",
       sexLabel: "Пол",
       male: "Мъж",
       female: "Жена",
@@ -248,7 +248,7 @@ export const translations: Record<Locale, TranslationShape> = {
       calculateButton: "Изчисли →",
       resultTitle: "Приблизителен максимум",
       strengthLevelPrefix: "× телесното тегло",
-      moreToNextTier: (kg, tier) => `Още ${kg} kg до ниво ${tier}.`,
+      moreToNextTier: (amount, unit, tier) => `Още ${amount} ${unit} до ниво ${tier}.`,
       repTableTitle: "Тежест за други повторения (изчислено от максимума)",
       formulaNote: "Тези оценки са формула, не тест — реалният ти максимум може да варира с ±5-10% според деня, техниката и умората.",
       strengthDisclaimer:
@@ -424,12 +424,12 @@ export const translations: Record<Locale, TranslationShape> = {
       subtitle: "Enter the weight and reps from a recent session — we'll estimate your one-rep max using three formulas.",
       exerciseLabel: "Exercise",
       exercises: { squat: "Squat", bench_press: "Bench Press", deadlift: "Deadlift", overhead_press: "Overhead Press" },
-      weightLabel: "Weight lifted (kg)",
+      weightLabel: "Weight lifted",
       repsLabel: "Reps",
       repsHint: "Most accurate under 10 reps.",
       compareShow: "+ Compare against strength level (bodyweight/sex/age)",
       compareHide: "− Hide strength level comparison",
-      bodyweightLabel: "Your bodyweight (kg)",
+      bodyweightLabel: "Your bodyweight",
       sexLabel: "Sex",
       male: "Male",
       female: "Female",
@@ -438,7 +438,7 @@ export const translations: Record<Locale, TranslationShape> = {
       calculateButton: "Calculate →",
       resultTitle: "Estimated Max",
       strengthLevelPrefix: "× bodyweight",
-      moreToNextTier: (kg, tier) => `${kg} kg to reach ${tier}.`,
+      moreToNextTier: (amount, unit, tier) => `${amount} ${unit} to reach ${tier}.`,
       repTableTitle: "Weight for other rep ranges (from your estimated max)",
       formulaNote: "These are formula estimates, not a test — your real max may vary ±5-10% depending on the day, technique, and fatigue.",
       strengthDisclaimer:
