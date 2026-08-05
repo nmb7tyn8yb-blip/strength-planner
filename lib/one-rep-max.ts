@@ -69,38 +69,35 @@ function round(n: number): number {
 // ЧАСТ 2: ПРИБЛИЗИТЕЛНО ниво на сила (не точна класация)
 // ---------------------------------------------------------------------
 
-export type StrengthTier = "Новак" | "Стабилен" | "Як" | "Звяр" | "Чудовище" | "Изрод";
-
-const TIER_NAMES: StrengthTier[] = ["Новак", "Стабилен", "Як", "Звяр", "Чудовище", "Изрод"];
+export type StrengthTierIndex = 0 | 1 | 2 | 3 | 4;
 
 // Съотношения (лифт ÷ телесно тегло) — приблизителни, закръглени, ориентир.
 // [Стабилен, Як, Звяр, Чудовище, Изрод]
-const STRENGTH_RATIOS: Record<LiftKey, Record<Sex, [number, number, number, number, number]>> = {
+const STRENGTH_RATIOS: Record<LiftKey, Record<Sex, [number, number, number, number]>> = {
   squat: {
-    male: [0.75, 1.25, 1.75, 2.5, 3.25],
-    female: [0.5, 0.85, 1.25, 1.75, 2.25],
+    male: [0.75, 1.5, 2.25, 3.0],
+    female: [0.5, 1.0, 1.5, 2.0],
   },
   bench_press: {
-    male: [0.75, 1.0, 1.5, 2.0, 2.5],
-    female: [0.45, 0.6, 0.9, 1.25, 1.6],
+    male: [0.75, 1.25, 1.75, 2.25],
+    female: [0.45, 0.75, 1.05, 1.4],
   },
   deadlift: {
-    male: [1.0, 1.5, 2.0, 2.75, 3.5],
-    female: [0.75, 1.1, 1.5, 2.0, 2.5],
+    male: [1.0, 1.75, 2.5, 3.25],
+    female: [0.75, 1.3, 1.85, 2.4],
   },
   overhead_press: {
-    male: [0.5, 0.65, 0.85, 1.15, 1.5],
-    female: [0.3, 0.4, 0.55, 0.75, 1.0],
+    male: [0.5, 0.75, 1.0, 1.3],
+    female: [0.3, 0.45, 0.65, 0.85],
   },
 };
 
 export interface StrengthLevelResult {
   ratio: number;
   ageAdjustedRatio: number;
-  tier: StrengthTier;
-  nextTier: StrengthTier | null;
+  tierIndex: StrengthTierIndex;
   weightToNextTierKg: number | null;
-  boundaries: [number, number, number, number, number];
+  boundaries: [number, number, number, number];
 }
 
 /**
@@ -129,18 +126,11 @@ export function estimateStrengthLevel(
     if (ageAdjustedRatio >= boundaries[i]) tierIndex = i + 1;
   }
 
-  const tier = TIER_NAMES[tierIndex];
-  const nextTier = tierIndex < TIER_NAMES.length - 1 ? TIER_NAMES[tierIndex + 1] : null;
   const nextBoundary = tierIndex < boundaries.length ? boundaries[tierIndex] : null;
   const weightToNextTierKg =
-    nextBoundary !== null ? round(nextBoundary * bodyweightKg / ageAdjustment(age) - oneRepMaxKg) : null;
+    nextBoundary !== null ? round((nextBoundary * bodyweightKg) / ageAdjustment(age) - oneRepMaxKg) : null;
 
-  return { ratio, ageAdjustedRatio, tier, nextTier, weightToNextTierKg, boundaries };
+  return { ratio, ageAdjustedRatio, tierIndex: tierIndex as StrengthTierIndex, weightToNextTierKg, boundaries };
 }
 
-export const STRENGTH_LEVEL_DISCLAIMER =
-  "Тези нива са ориентировъчни — обобщение на общоприети, закръглени съотношения " +
-  "тегло/собствено тегло от множество публични източници. Не са точно възпроизвеждане " +
-  "на конкретна изследователска таблица (напр. Lon Kilgore/ExRx, които са базирани на " +
-  "реални състезателни данни, не формула) и реално варират според извадката. Приемай " +
-  "резултата като насока, не като прецизно измерване.";
+
