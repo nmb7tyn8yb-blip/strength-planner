@@ -22,7 +22,7 @@ interface ProgramRow {
 }
 
 export default function ProgramsPage() {
-  const { t } = useLanguage();
+  const { t, localizedHref } = useLanguage();
   const p = t.programs;
 
   const [programs, setPrograms] = useState<ProgramRow[] | null>(null);
@@ -42,7 +42,7 @@ export default function ProgramsPage() {
   return (
     <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
       <div className="mx-auto max-w-6xl">
-        <Link href="/" className="text-sm text-chalkDim hover:text-chalk">
+        <Link href={localizedHref("/")} className="text-sm text-chalkDim hover:text-chalk">
           {p.backHome}
         </Link>
 
@@ -51,7 +51,7 @@ export default function ProgramsPage() {
 
         <div className="mt-6">
           <Link
-            href="/quiz"
+            href={localizedHref("/quiz")}
             className="inline-flex items-center gap-2 text-sm text-amber underline-offset-4 hover:underline"
           >
             {p.quizPrompt}
@@ -66,7 +66,7 @@ export default function ProgramsPage() {
           {programs?.map((program) => (
             <Link
               key={program.slug}
-              href={`/programs/${program.slug}`}
+              href={localizedHref(`/programs/${program.slug}`)}
               className="group flex flex-col justify-between bg-graphite p-7 transition hover:bg-graphite2"
             >
               <div>
