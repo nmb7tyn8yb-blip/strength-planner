@@ -10,7 +10,7 @@ import { useUnit } from "@/components/unit-provider";
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { locale, setLocale, t } = useLanguage();
+  const { locale, setLocale, t, localizedHref } = useLanguage();
   const { unit, setUnit } = useUnit();
   const [email, setEmail] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -86,7 +86,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-graphite/95 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="font-display text-lg font-semibold uppercase tracking-wider text-chalk">
+        <Link href={localizedHref("/")} className="font-display text-lg font-semibold uppercase tracking-wider text-chalk">
           Strength<span className="text-amber">Planner</span>
         </Link>
 
@@ -94,11 +94,12 @@ export default function Navbar() {
         <div className="hidden items-center gap-1 md:flex">
           <ul className="flex items-center gap-1">
             {NAV_LINKS.map((link) => {
-              const active = pathname === link.href || pathname?.startsWith(link.href + "/");
+              const localizedTarget = localizedHref(link.href);
+              const active = pathname === localizedTarget || pathname?.startsWith(localizedTarget + "/");
               return (
                 <li key={link.href}>
                   <Link
-                    href={link.href}
+                    href={localizedHref(link.href)}
                     className={`px-3 py-2 text-sm font-medium transition ${
                       active ? "text-amber" : "text-chalkDim hover:text-chalk"
                     }`}
@@ -126,7 +127,7 @@ export default function Navbar() {
               </>
             ) : (
               <Link
-                href="/start"
+                href={localizedHref("/start")}
                 className="border-2 border-amber px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-amber transition hover:bg-amber hover:text-graphite"
               >
                 {t.nav.login}
@@ -153,11 +154,12 @@ export default function Navbar() {
         <div className="border-t border-white/10 px-6 py-4 md:hidden">
           <ul className="grid gap-1">
             {NAV_LINKS.map((link) => {
-              const active = pathname === link.href || pathname?.startsWith(link.href + "/");
+              const localizedTarget = localizedHref(link.href);
+              const active = pathname === localizedTarget || pathname?.startsWith(localizedTarget + "/");
               return (
                 <li key={link.href}>
                   <Link
-                    href={link.href}
+                    href={localizedHref(link.href)}
                     className={`block px-3 py-3 text-base font-medium transition ${
                       active ? "text-amber" : "text-chalkDim hover:text-chalk"
                     }`}
@@ -183,7 +185,7 @@ export default function Navbar() {
               </button>
             ) : (
               <Link
-                href="/start"
+                href={localizedHref("/start")}
                 className="border-2 border-amber px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber transition hover:bg-amber hover:text-graphite"
               >
                 {t.nav.login}
