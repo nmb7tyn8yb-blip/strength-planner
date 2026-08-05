@@ -88,6 +88,22 @@ export interface TranslationShape {
   };
   strengthTiers: string[]; // professional: Beginner..Elite
   strengthBadges: string[]; // fun: Rookie..Monster
+  quiz: {
+    questionProgress: (n: number, total: number) => string;
+    back: string;
+    loading: string;
+    retry: string;
+    resultsTitle: string;
+    resultsSubtitle: string;
+    noMatch: string;
+    bestMatch: string;
+    rankedMatch: (n: number) => string;
+    matchSuffix: string;
+    viewProgram: string;
+    restart: string;
+    loadError: string;
+    questions: { question: string; options: string[] }[];
+  };
 }
 
 export const translations: Record<Locale, TranslationShape> = {
@@ -183,6 +199,31 @@ export const translations: Record<Locale, TranslationShape> = {
     },
     strengthTiers: ["Начинаещ", "Любител", "Среднонапреднал", "Напреднал", "Елитен"],
     strengthBadges: ["Новак", "Стабилен", "Як", "Звяр", "Изрод"],
+    quiz: {
+      questionProgress: (n, total) => `Въпрос ${n} от ${total}`,
+      back: "← Назад",
+      loading: "Изчисляваме най-подходящите програми за теб…",
+      retry: "Пробвай пак",
+      resultsTitle: "Ето какво ти препоръчваме",
+      resultsSubtitle: "Подредени по това колко добре пасват на отговорите ти.",
+      noMatch: "Нито една програма не пасва достатъчно добре на тази комбинация — пробвай да промениш някой отговор.",
+      bestMatch: "Най-добро попадение",
+      rankedMatch: (n) => `#${n} по подходящост`,
+      matchSuffix: "мач",
+      viewProgram: "Виж програмата →",
+      restart: "← Отговори наново",
+      loadError: "Не успяхме да заредим каталога с програми. Провери връзката и опитай пак.",
+      questions: [
+        { question: "Каква е основната ти цел?", options: ["Обща сила", "Сила и мускулна маса", "Основно лежанка", "Трибой / състезателен резултат"] },
+        { question: "Какъв е тренировъчният ти стаж?", options: ["Начинаещ (< 6 месеца системни тренировки)", "Средно напреднал", "Напреднал"] },
+        { question: "Колко дни седмично можеш да тренираш?", options: ["2 дни", "3 дни", "4 дни", "5+ дни"] },
+        { question: "Колко време имаш за една тренировка?", options: ["До 60 минути", "60–90 минути", "Над 90 минути"] },
+        { question: "С какво оборудване разполагаш?", options: ["Само щанга, дискове и стойка", "Пълна зала — рамка, дъмбели, ластици и др."] },
+        { question: "Предпочиташ ли тежестите да се адаптират сами според представянето ти (AMRAP/RPE)?", options: ["Да, харесвам гъвкавост според деня", "Не, предпочитам фиксиран точен план"] },
+        { question: "Тренираш ли и друг спорт успоредно?", options: ["Не", "Да, леко (1–2 пъти седмично)", "Да, интензивно (3+ пъти седмично)"] },
+        { question: "Имаш ли стари травми или дискомфорт, за които да внимаваме?", options: ["Да", "Не"] },
+      ],
+    },
   },
   en: {
     nav: {
@@ -276,5 +317,30 @@ export const translations: Record<Locale, TranslationShape> = {
     },
     strengthTiers: ["Beginner", "Novice", "Intermediate", "Advanced", "Elite"],
     strengthBadges: ["Rookie", "Solid", "Strong", "Beast", "Monster"],
+    quiz: {
+      questionProgress: (n, total) => `Question ${n} of ${total}`,
+      back: "← Back",
+      loading: "Calculating the best programs for you…",
+      retry: "Try again",
+      resultsTitle: "Here's what we recommend",
+      resultsSubtitle: "Ranked by how well they match your answers.",
+      noMatch: "No program fits this combination well enough — try changing an answer.",
+      bestMatch: "Best match",
+      rankedMatch: (n) => `#${n} best fit`,
+      matchSuffix: "match",
+      viewProgram: "View program →",
+      restart: "← Answer again",
+      loadError: "We couldn't load the program catalog. Check your connection and try again.",
+      questions: [
+        { question: "What's your main goal?", options: ["General strength", "Strength and muscle mass", "Bench press focus", "Powerlifting total / meet performance"] },
+        { question: "What's your training experience?", options: ["Beginner (< 6 months consistent training)", "Intermediate", "Advanced"] },
+        { question: "How many days a week can you train?", options: ["2 days", "3 days", "4 days", "5+ days"] },
+        { question: "How much time do you have per session?", options: ["Up to 60 minutes", "60–90 minutes", "Over 90 minutes"] },
+        { question: "What equipment do you have access to?", options: ["Just a barbell, plates, and a rack", "Full gym — rack, dumbbells, bands, etc."] },
+        { question: "Do you prefer weights that auto-adjust to your performance (AMRAP/RPE)?", options: ["Yes, I like flexibility day to day", "No, I prefer a fixed, exact plan"] },
+        { question: "Do you also train another sport alongside this?", options: ["No", "Yes, lightly (1–2×/week)", "Yes, intensely (3+×/week)"] },
+        { question: "Do you have old injuries or discomfort we should watch for?", options: ["Yes", "No"] },
+      ],
+    },
   },
 };
