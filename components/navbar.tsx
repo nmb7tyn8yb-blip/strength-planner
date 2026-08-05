@@ -5,11 +5,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
 import { useLanguage } from "@/components/language-provider";
+import { useUnit } from "@/components/unit-provider";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { locale, setLocale, t } = useLanguage();
+  const { unit, setUnit } = useUnit();
   const [email, setEmail] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -62,6 +64,25 @@ export default function Navbar() {
     );
   }
 
+  function UnitSwitch({ className = "" }: { className?: string }) {
+    return (
+      <div className={`flex border border-white/15 text-xs font-semibold ${className}`}>
+        <button
+          onClick={() => setUnit("kg")}
+          className={`px-2 py-1 transition ${unit === "kg" ? "bg-steel text-graphite" : "text-chalkDim hover:text-chalk"}`}
+        >
+          KG
+        </button>
+        <button
+          onClick={() => setUnit("lb")}
+          className={`px-2 py-1 transition ${unit === "lb" ? "bg-steel text-graphite" : "text-chalkDim hover:text-chalk"}`}
+        >
+          LB
+        </button>
+      </div>
+    );
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-graphite/95 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -90,6 +111,7 @@ export default function Navbar() {
           </ul>
 
           <LanguageSwitch className="ml-3" />
+          <UnitSwitch className="ml-2" />
 
           <div className="ml-3 flex items-center gap-3 border-l border-white/10 pl-3">
             {email ? (
@@ -148,7 +170,10 @@ export default function Navbar() {
           </ul>
 
           <div className="mt-3 flex items-center justify-between border-t border-white/10 px-3 pt-3">
-            <LanguageSwitch />
+            <div className="flex gap-2">
+              <LanguageSwitch />
+              <UnitSwitch />
+            </div>
             {email ? (
               <button
                 onClick={handleLogout}
