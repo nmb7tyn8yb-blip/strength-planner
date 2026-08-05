@@ -14,15 +14,17 @@ interface RecommendationProfile {
 interface ProgramRow {
   slug: string;
   name: string;
+  name_en: string | null;
   level: string;
   primary_goal: string;
   days_per_week: number;
   duration_weeks: number | null;
   recommendation_profile: RecommendationProfile;
+  pitch_en: string | null;
 }
 
 export default function ProgramsPage() {
-  const { t, localizedHref } = useLanguage();
+  const { t, localizedHref, locale } = useLanguage();
   const p = t.programs;
 
   const [programs, setPrograms] = useState<ProgramRow[] | null>(null);
@@ -79,9 +81,11 @@ export default function ProgramsPage() {
                     {(p.goals as Record<string, string>)[program.primary_goal] ?? program.primary_goal}
                   </span>
                 </div>
-                <h2 className="mt-2 font-display text-xl font-semibold text-chalk">{program.name}</h2>
+                <h2 className="mt-2 font-display text-xl font-semibold text-chalk">
+                  {locale === "en" && program.name_en ? program.name_en : program.name}
+                </h2>
                 <p className="mt-2 text-sm leading-relaxed text-chalkDim">
-                  {program.recommendation_profile?.pitch}
+                  {locale === "en" && program.pitch_en ? program.pitch_en : program.recommendation_profile?.pitch}
                 </p>
               </div>
 
