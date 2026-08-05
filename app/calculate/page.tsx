@@ -249,7 +249,7 @@ function CalculateInner() {
                 <div key={lift.key}>
                   <div className="flex items-baseline justify-between">
                     <label className="text-xs uppercase tracking-widest text-chalkDim">
-                      {lift.label} — {pc.inputLabel} ({unit})
+                      {t.calculator.exercises[lift.key]} — {pc.inputLabel} ({unit})
                     </label>
                     <Link
                       href={localizedHref(`/1rm-calculator?lift=${lift.key}&returnTo=${encodeURIComponent(
@@ -286,19 +286,19 @@ function CalculateInner() {
         )}
 
         {supported && showResults && programSlug === "531" && (
-          <Wendler531Results numericMaxes={numericMaxes} unit={unit} pc={pc} />
+          <Wendler531Results numericMaxes={numericMaxes} unit={unit} pc={pc} exerciseLabels={t.calculator.exercises} />
         )}
 
         {supported && showResults && programSlug === "starting-strength" && (
-          <StartingStrengthResults numericMaxes={effectiveStartingWeights} wasReduced={isStartingStrength} unit={unit} pc={pc} />
+          <StartingStrengthResults numericMaxes={effectiveStartingWeights} wasReduced={isStartingStrength} unit={unit} pc={pc} exerciseLabels={t.calculator.exercises} />
         )}
 
         {supported && showResults && programSlug === "hepburn-a" && (
-          <HepburnResults startingWeights={effectiveStartingWeights} unit={unit} pc={pc} />
+          <HepburnResults startingWeights={effectiveStartingWeights} unit={unit} pc={pc} exerciseLabels={t.calculator.exercises} />
         )}
 
         {supported && showResults && programSlug === "texas-method" && (
-          <TexasMethodResults oneRepMaxes={numericMaxes} unit={unit} pc={pc} />
+          <TexasMethodResults oneRepMaxes={numericMaxes} unit={unit} pc={pc} exerciseLabels={t.calculator.exercises} />
         )}
 
         {supported && showResults && (programSlug === "surovetsky-1" || programSlug === "surovetsky-2" || programSlug === "surovetsky-full") && (
@@ -306,11 +306,11 @@ function CalculateInner() {
         )}
 
         {supported && showResults && programSlug === "juggernaut" && (
-          <JuggernautResults oneRepMaxes={numericMaxes} variant="classic" unit={unit} pc={pc} />
+          <JuggernautResults oneRepMaxes={numericMaxes} variant="classic" unit={unit} pc={pc} exerciseLabels={t.calculator.exercises} />
         )}
 
         {supported && showResults && programSlug === "juggernaut-excel" && (
-          <JuggernautResults oneRepMaxes={numericMaxes} variant="excel" unit={unit} pc={pc} />
+          <JuggernautResults oneRepMaxes={numericMaxes} variant="excel" unit={unit} pc={pc} exerciseLabels={t.calculator.exercises} />
         )}
 
         {supported && showResults && (
@@ -334,7 +334,7 @@ function CalculateInner() {
   );
 }
 
-function Wendler531Results({ numericMaxes, unit, pc }: { numericMaxes: Record<WendlerLift, number>; unit: WeightUnit; pc: TranslationShape["programCalc"] }) {
+function Wendler531Results({ numericMaxes, unit, pc, exerciseLabels }: { numericMaxes: Record<WendlerLift, number>; unit: WeightUnit; pc: TranslationShape["programCalc"]; exerciseLabels: TranslationShape["calculator"]["exercises"] }) {
   return (
     <div className="mt-10">
       <h2 className="font-display text-xl font-semibold">{pc.wendlerTitle}</h2>
@@ -355,7 +355,7 @@ function Wendler531Results({ numericMaxes, unit, pc }: { numericMaxes: Record<We
           return (
             <div key={lift.key} className="border-2 border-white/15 p-5">
               <div className="flex items-baseline justify-between">
-                <h3 className="font-display text-lg font-semibold">{lift.label}</h3>
+                <h3 className="font-display text-lg font-semibold">{exerciseLabels[lift.key]}</h3>
                 <span className="text-sm text-chalkDim">TM: {displayWeight(tm, unit)} {unit}</span>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-3">
@@ -399,11 +399,13 @@ function StartingStrengthResults({
   wasReduced,
   unit,
   pc,
+  exerciseLabels,
 }: {
   numericMaxes: Record<WendlerLift, number>;
   wasReduced: boolean;
   unit: WeightUnit;
   pc: TranslationShape["programCalc"];
+  exerciseLabels: TranslationShape["calculator"]["exercises"];
 }) {
   const state = initStartingStrengthState({
     squat: numericMaxes.squat,
@@ -424,7 +426,7 @@ function StartingStrengthResults({
         {session.exercises.map((exercise) => (
           <div key={exercise.exerciseSlug} className="border-2 border-white/15 p-5">
             <h3 className="font-display text-lg font-semibold">
-              {LIFT_LABEL_BG[exercise.exerciseSlug]}
+              {exerciseLabels[exercise.exerciseSlug]}
             </h3>
 
             <p className="mt-3 text-xs uppercase tracking-widest text-chalkDim">{pc.warmup}</p>
@@ -455,7 +457,7 @@ function StartingStrengthResults({
   );
 }
 
-function HepburnResults({ startingWeights, unit, pc }: { startingWeights: Record<WendlerLift, number>; unit: WeightUnit; pc: TranslationShape["programCalc"] }) {
+function HepburnResults({ startingWeights, unit, pc, exerciseLabels }: { startingWeights: Record<WendlerLift, number>; unit: WeightUnit; pc: TranslationShape["programCalc"]; exerciseLabels: TranslationShape["calculator"]["exercises"] }) {
   return (
     <div className="mt-10">
       <h2 className="font-display text-xl font-semibold">{pc.hepburnTitle}</h2>
@@ -471,7 +473,7 @@ function HepburnResults({ startingWeights, unit, pc }: { startingWeights: Record
           return (
             <div key={lift.key} className="border-2 border-white/15 p-5">
               <div className="flex items-baseline justify-between">
-                <h3 className="font-display text-lg font-semibold">{LIFT_LABEL_BG[lift.key]}</h3>
+                <h3 className="font-display text-lg font-semibold">{exerciseLabels[lift.key]}</h3>
                 <span className="text-sm text-chalkDim">
                   +{displayWeight(DEFAULT_HEPBURN_INCREMENTS_KG[lift.key as HepburnLift], unit)} {unit} {pc.hepburnAfter}
                 </span>
@@ -505,7 +507,7 @@ function HepburnResults({ startingWeights, unit, pc }: { startingWeights: Record
   );
 }
 
-function TexasMethodResults({ oneRepMaxes, unit, pc }: { oneRepMaxes: Record<WendlerLift, number>; unit: WeightUnit; pc: TranslationShape["programCalc"] }) {
+function TexasMethodResults({ oneRepMaxes, unit, pc, exerciseLabels }: { oneRepMaxes: Record<WendlerLift, number>; unit: WeightUnit; pc: TranslationShape["programCalc"]; exerciseLabels: TranslationShape["calculator"]["exercises"] }) {
   // Texas Method иска "текущ 5RM или работна тежест" (документирано в оригинала) —
   // оценяваме 5RM от 1RM по формулата на Brzycki (~89%), без допълнителен запас.
   const estimate5RM = (max: number) => Math.round((max * (32 / 36)) / 2.5) * 2.5;
@@ -525,7 +527,7 @@ function TexasMethodResults({ oneRepMaxes, unit, pc }: { oneRepMaxes: Record<Wen
 
       <div className="mt-6 grid gap-6">
         <div className="border-2 border-white/15 p-5">
-          <h3 className="font-display text-lg font-semibold">{LIFT_LABEL_BG.squat}</h3>
+          <h3 className="font-display text-lg font-semibold">{exerciseLabels.squat}</h3>
           <div className="mt-3 grid grid-cols-5 gap-2">
             {plan.squat.map((s, i) => (
               <div key={i} className="border border-white/10 p-2 text-center">
@@ -536,7 +538,7 @@ function TexasMethodResults({ oneRepMaxes, unit, pc }: { oneRepMaxes: Record<Wen
           </div>
         </div>
         <div className="border-2 border-white/15 p-5">
-          <h3 className="font-display text-lg font-semibold">{LIFT_LABEL_BG[plan.heavyUpperLift.lift]}</h3>
+          <h3 className="font-display text-lg font-semibold">{exerciseLabels[plan.heavyUpperLift.lift]}</h3>
           <div className="mt-3 grid grid-cols-5 gap-2">
             {plan.heavyUpperLift.sets.map((s, i) => (
               <div key={i} className="border border-white/10 p-2 text-center">
@@ -547,7 +549,7 @@ function TexasMethodResults({ oneRepMaxes, unit, pc }: { oneRepMaxes: Record<Wen
           </div>
         </div>
         <div className="border-2 border-white/15 p-5">
-          <h3 className="font-display text-lg font-semibold">{LIFT_LABEL_BG.deadlift}</h3>
+          <h3 className="font-display text-lg font-semibold">{exerciseLabels.deadlift}</h3>
           <div className="mt-3 grid grid-cols-1 gap-2 w-24">
             <div className="border border-white/10 p-2 text-center">
               <div className="font-display text-sm font-bold text-steelLight">{displayWeight(state.currentDeadliftKg, unit)}</div>
@@ -588,11 +590,13 @@ function JuggernautResults({
   variant,
   unit,
   pc,
+  exerciseLabels,
 }: {
   oneRepMaxes: Record<WendlerLift, number>;
   variant: "classic" | "excel";
   unit: WeightUnit;
   pc: TranslationShape["programCalc"];
+  exerciseLabels: TranslationShape["calculator"]["exercises"];
 }) {
   return (
     <div className="mt-10">
@@ -622,7 +626,7 @@ function JuggernautResults({
 
           return (
             <div key={lift.key} className="border-2 border-white/15 p-5">
-              <h3 className="font-display text-lg font-semibold">{lift.label}</h3>
+              <h3 className="font-display text-lg font-semibold">{exerciseLabels[lift.key]}</h3>
               <div className="mt-3 grid grid-cols-5 gap-2">
                 {sets.map((s, i) => (
                   <div key={i} className="border border-white/10 p-2 text-center">
