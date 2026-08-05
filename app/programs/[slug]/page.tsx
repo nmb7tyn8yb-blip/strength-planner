@@ -6,6 +6,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
 import { useLanguage } from "@/components/language-provider";
 import LoadingScreen from "@/components/loading-screen";
+import ProductRecommendations from "@/components/product-recommendations";
+import { PROGRAM_PLACEMENT_MAP } from "@/lib/affiliate-products";
 
 interface RecommendationProfile {
   goals: string[];
@@ -237,6 +239,11 @@ export default function ProgramDetailPage() {
             {d.browseOthers}
           </Link>
         </div>
+
+        <ProductRecommendations
+          productIds={PROGRAM_PLACEMENT_MAP[program.slug]}
+          title={isEn ? "What you'll need for this program" : "Какво ще ти трябва за тази програма"}
+        />
       </div>
     </main>
   );
