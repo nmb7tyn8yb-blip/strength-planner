@@ -104,6 +104,30 @@ export interface TranslationShape {
     loadError: string;
     questions: { question: string; options: string[] }[];
   };
+  programDetail: {
+    backToAll: string;
+    statLevel: string;
+    statGoal: string;
+    statDays: string;
+    statDuration: string;
+    overviewTitle: string;
+    howItWorksTitle: string;
+    bestForTitle: string;
+    considerationsTitle: string;
+    equipmentTitle: string;
+    equipmentFull: string;
+    equipmentMinimal: string;
+    autoregTitle: string;
+    autoregLabels: { none: string; medium: string; high: string };
+    sessionMinTitle: string;
+    minutesSuffix: string;
+    otherSportsTitle: string;
+    otherSportsLabels: { low: string; medium: string; high: string };
+    failureRuleTitle: string;
+    calculateButton: string;
+    browseOthers: string;
+    equipmentItems: Record<string, string>;
+  };
 }
 
 export const translations: Record<Locale, TranslationShape> = {
@@ -224,6 +248,44 @@ export const translations: Record<Locale, TranslationShape> = {
         { question: "Имаш ли стари травми или дискомфорт, за които да внимаваме?", options: ["Да", "Не"] },
       ],
     },
+    programDetail: {
+      backToAll: "← Всички програми",
+      statLevel: "Ниво",
+      statGoal: "Цел",
+      statDays: "Дни/седмица",
+      statDuration: "Продължителност",
+      overviewTitle: "Какво представлява",
+      howItWorksTitle: "Как точно работи",
+      bestForTitle: "За кого е подходяща",
+      considerationsTitle: "На какво да обърнеш внимание",
+      equipmentTitle: "Оборудване",
+      equipmentFull: "Пълна зала",
+      equipmentMinimal: "Само щанга и дискове",
+      autoregTitle: "Автоматична адаптация",
+      autoregLabels: {
+        none: "Фиксиран план, без автоматична адаптация",
+        medium: "Частична автоматична адаптация (AMRAP серии)",
+        high: "Висока автоматична адаптация по представяне",
+      },
+      sessionMinTitle: "Минимална продължителност на сесия",
+      minutesSuffix: "минути",
+      otherSportsTitle: "Съвместимост с други спортове",
+      otherSportsLabels: {
+        low: "Ниска — тежка честота, трудно се комбинира",
+        medium: "Умерена",
+        high: "Висока — гъвкава",
+      },
+      failureRuleTitle: "Какво се случва при неуспешна серия",
+      calculateButton: "Изчисли моя план →",
+      browseOthers: "Разгледай други",
+      equipmentItems: {
+        щанга: "щанга",
+        дискове: "дискове",
+        "силова рамка": "силова рамка (клетка с предпазни лостове — за самостоятелен клек/лежанка, без партньор)",
+        дъмбели: "дъмбели (за помощни упражнения)",
+        стойка: "силова рамка (клетка с предпазни лостове — за самостоятелен клек/лежанка, без партньор)",
+      },
+    },
   },
   en: {
     nav: {
@@ -341,6 +403,44 @@ export const translations: Record<Locale, TranslationShape> = {
         { question: "Do you also train another sport alongside this?", options: ["No", "Yes, lightly (1–2×/week)", "Yes, intensely (3+×/week)"] },
         { question: "Do you have old injuries or discomfort we should watch for?", options: ["Yes", "No"] },
       ],
+    },
+    programDetail: {
+      backToAll: "← All programs",
+      statLevel: "Level",
+      statGoal: "Goal",
+      statDays: "Days/week",
+      statDuration: "Duration",
+      overviewTitle: "What it is",
+      howItWorksTitle: "How it works",
+      bestForTitle: "Who it's for",
+      considerationsTitle: "What to keep in mind",
+      equipmentTitle: "Equipment",
+      equipmentFull: "Full gym",
+      equipmentMinimal: "Just a barbell and plates",
+      autoregTitle: "Auto-regulation",
+      autoregLabels: {
+        none: "Fixed plan, no auto-regulation",
+        medium: "Partial auto-regulation (AMRAP sets)",
+        high: "High auto-regulation based on performance",
+      },
+      sessionMinTitle: "Minimum session length",
+      minutesSuffix: "minutes",
+      otherSportsTitle: "Compatibility with other sports",
+      otherSportsLabels: {
+        low: "Low — heavy frequency, hard to combine",
+        medium: "Moderate",
+        high: "High — flexible",
+      },
+      failureRuleTitle: "What happens on a failed set",
+      calculateButton: "Calculate My Plan →",
+      browseOthers: "Browse other programs",
+      equipmentItems: {
+        щанга: "barbell",
+        дискове: "plates",
+        "силова рамка": "power rack (safety cage — for training squat/bench alone, without a spotter)",
+        дъмбели: "dumbbells (for accessory work)",
+        стойка: "power rack (safety cage — for training squat/bench alone, without a spotter)",
+      },
     },
   },
 };
