@@ -6,7 +6,52 @@
 
 export type Locale = "bg" | "en";
 
-export const translations = {
+interface FeaturedProgram {
+  name: string;
+  tag: string;
+  pitch: string;
+}
+
+export interface TranslationShape {
+  nav: {
+    programs: string;
+    createProgram: string;
+    calculator: string;
+    quiz: string;
+    dashboard: string;
+    login: string;
+    logout: string;
+  };
+  footer: {
+    rights: string;
+    privacy: string;
+    terms: string;
+  };
+  home: {
+    heroKicker: string;
+    heroTitle1: string;
+    heroTitle2: string;
+    heroTitle3: string;
+    heroSubtitle: string;
+    ctaQuiz: string;
+    ctaCatalog: string;
+    progressionCaption: string;
+    howItWorks: string;
+    step1Title: string;
+    step1Desc: string;
+    step2Title: string;
+    step2Desc: string;
+    step3Title: string;
+    step3Desc: string;
+    programsTitle: string;
+    viewAll: string;
+    finalCta: string;
+    startQuiz: string;
+    featuredPrograms: FeaturedProgram[];
+  };
+}
+
+export const translations: Record<Locale, TranslationShape> = {
   bg: {
     nav: {
       programs: "Програми",
@@ -99,6 +144,4 @@ export const translations = {
       ],
     },
   },
-} as const;
-
-export type TranslationKey = typeof translations.bg;
+};
