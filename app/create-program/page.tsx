@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
+import { useLanguage } from "@/components/language-provider";
 import { createFirstCustomWorkout } from "@/lib/workout-engine";
 import LoadingScreen from "@/components/loading-screen";
 
@@ -29,6 +30,7 @@ function emptySession(index: number): SessionRow {
 }
 
 export default function CreateProgramPage() {
+  const { localizedHref } = useLanguage();
   const router = useRouter();
   const [phase, setPhase] = useState<"checking" | "no-auth" | "form" | "saving" | "done" | "error">("checking");
   const [errorMessage, setErrorMessage] = useState("");
@@ -160,7 +162,7 @@ export default function CreateProgramPage() {
             За да създадеш и следиш собствена програма, първо ти трябва профил (безплатно).
           </p>
           <a
-            href="/start"
+            href={localizedHref("/start")}
             className="mt-6 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
           >
             Направи профил →
@@ -180,7 +182,7 @@ export default function CreateProgramPage() {
             повтаря шаблона ти всяка седмица и ще следи прогреса ти автоматично.
           </p>
           <a
-            href="/today"
+            href={localizedHref("/today")}
             className="mt-6 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
           >
             Към днешната тренировка →
