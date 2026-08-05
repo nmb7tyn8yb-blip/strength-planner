@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
 import LoadingScreen from "@/components/loading-screen";
 import EmptyState from "@/components/empty-state";
+import { useLanguage } from "@/components/language-provider";
 import { useUnit } from "@/components/unit-provider";
 import { displayWeight, inputToKg } from "@/lib/units";
 import ProductRecommendations from "@/components/product-recommendations";
@@ -57,6 +58,7 @@ interface WorkoutSetRow {
 type Phase = "loading" | "no-plan" | "unsupported" | "workout" | "failure-reason" | "confirm-max" | "submitting" | "done" | "error";
 
 export default function TodayPage() {
+  const { localizedHref } = useLanguage();
   const { unit } = useUnit();
   const [phase, setPhase] = useState<Phase>("loading");
   const [errorMessage, setErrorMessage] = useState("");
@@ -499,7 +501,7 @@ export default function TodayPage() {
       <EmptyState
         title="Нямаш насрочена тренировка"
         description="Или още нямаш активен план, или си влязъл с друг акаунт."
-        ctaHref="/programs"
+        ctaHref={localizedHref("/programs")}
         ctaLabel="Разгледай програмите"
       />
     );
@@ -510,7 +512,7 @@ export default function TodayPage() {
       <EmptyState
         title={programName}
         description="Тази програма все още не е свързана с този екран — но всичките 8 програми вече имат готова логика, скоро ще бъде и тук."
-        ctaHref="/dashboard"
+        ctaHref={localizedHref("/dashboard")}
         ctaLabel="Обратно към таблото"
       />
     );
