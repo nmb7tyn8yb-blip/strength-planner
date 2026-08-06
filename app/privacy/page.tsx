@@ -14,8 +14,8 @@ export default function PrivacyPage() {
           <section>
             <h2 className="font-display text-lg font-semibold text-amber">1. Кой обработва данните ти</h2>
             <p className="mt-2 text-chalkDim">
-              [Тодор Димитров], [ЕИК ако има], с адрес [адрес], имейл за контакт [todor_dimitrov@yahoo.com] — администратор на
-              лични данни по смисъла на Регламент (ЕС) 2016/679 (GDPR) за услугата StrengthPlanner.
+              [Име/фирма], [ЕИК ако има], с адрес [адрес], имейл за контакт [имейл] — администратор на
+              лични данни по смисъла на Регламент (ЕС) 2016/679 (GDPR) за услугата SilaPlan.
             </p>
           </section>
 
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
               <li>· Оттегляне на съгласието по всяко време</li>
             </ul>
             <p className="mt-2 text-chalkDim">
-              За да упражниш тези права, пиши ни на [todor_dimitrov@yahoo.com].
+              За да упражниш тези права, пиши ни на [имейл за контакт].
             </p>
           </section>
 
@@ -98,7 +98,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="font-display text-lg font-semibold text-amber">10. Контакт</h2>
             <p className="mt-2 text-chalkDim">
-              Въпроси относно тази политика: [todor_dimitrov@yahoo.com]. Имаш право и да подадеш жалба до
+              Въпроси относно тази политика: [имейл за контакт]. Имаш право и да подадеш жалба до
               Комисията за защита на личните данни (КЗЛД), ако смяташ, че правата ти са нарушени.
             </p>
           </section>
