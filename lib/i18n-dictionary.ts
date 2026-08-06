@@ -226,6 +226,40 @@ export interface TranslationShape {
     deleting: string;
     error: string;
   };
+  dashboard: {
+    loading: string;
+    noPlanTitle: string;
+    noPlanDesc: string;
+    browsePrograms: string;
+    yourPlans: (n: number) => string;
+    currentWeights: string;
+    completedWorkouts: string;
+    successRate: string;
+    upcoming: string;
+    noUpcoming: string;
+    recentWorkouts: string;
+    noRecent: string;
+    hide: string;
+    viewAll: (n: number) => string;
+    programStructure: string;
+    weekOverview: string;
+    historyTitle: string;
+    dateHeader: string;
+    exerciseHeader: string;
+    weightHeader: string;
+    repsHeader: string;
+    noHistory: string;
+    programFallback: string;
+    statusLabels: {
+      planned: string;
+      in_progress: string;
+      completed: string;
+      partial: string;
+      failed: string;
+      skipped: string;
+      moved: string;
+    };
+  };
   programCalc: {
     backToProgram: string;
     title: string;
@@ -649,6 +683,40 @@ export const translations: Record<Locale, TranslationShape> = {
       deleting: "Изтриваме…",
       error: "Не успяхме да изтрием профила. Опитай пак или пиши ни.",
     },
+    dashboard: {
+      loading: "Зареждаме таблото ти…",
+      noPlanTitle: "Нямаш активен план",
+      noPlanDesc: "Избери програма от каталога — калкулаторът работи веднага, без регистрация, ако само искаш да провериш числата.",
+      browsePrograms: "Разгледай програмите",
+      yourPlans: (n) => `Твоите планове (${n})`,
+      currentWeights: "Текущи тежести",
+      completedWorkouts: "Изиграни тренировки",
+      successRate: "Успеваемост",
+      upcoming: "Предстоящи",
+      noUpcoming: "Няма насрочени тренировки.",
+      recentWorkouts: "Последни тренировки",
+      noRecent: "Още нямаш изиграни тренировки.",
+      hide: "Скрий",
+      viewAll: (n) => `Виж всички (${n})`,
+      programStructure: "Структура на програмата",
+      weekOverview: "Твоят седмичен план",
+      historyTitle: "История на сериите",
+      dateHeader: "Дата",
+      exerciseHeader: "Упражнение",
+      weightHeader: "Тегло",
+      repsHeader: "Повторения",
+      noHistory: "Все още няма записана история.",
+      programFallback: "Програма",
+      statusLabels: {
+        planned: "Планирана",
+        in_progress: "В прогрес",
+        completed: "Изпълнена",
+        partial: "Частично изпълнена",
+        failed: "Неуспешна",
+        skipped: "Пропусната",
+        moved: "Преместена",
+      },
+    },
   },
   en: {
     nav: {
@@ -989,6 +1057,40 @@ export const translations: Record<Locale, TranslationShape> = {
       cancelButton: "Cancel",
       deleting: "Deleting…",
       error: "We couldn't delete your account. Please try again or contact us.",
+    },
+    dashboard: {
+      loading: "Loading your dashboard…",
+      noPlanTitle: "No active plan",
+      noPlanDesc: "Pick a program from the catalog — the calculator works instantly, no signup, if you just want to check the numbers.",
+      browsePrograms: "Browse programs",
+      yourPlans: (n) => `Your plans (${n})`,
+      currentWeights: "Current weights",
+      completedWorkouts: "Workouts completed",
+      successRate: "Success rate",
+      upcoming: "Upcoming",
+      noUpcoming: "No workouts scheduled.",
+      recentWorkouts: "Recent workouts",
+      noRecent: "No workouts completed yet.",
+      hide: "Hide",
+      viewAll: (n) => `View all (${n})`,
+      programStructure: "Program structure",
+      weekOverview: "Your weekly plan",
+      historyTitle: "Set history",
+      dateHeader: "Date",
+      exerciseHeader: "Exercise",
+      weightHeader: "Weight",
+      repsHeader: "Reps",
+      noHistory: "No history recorded yet.",
+      programFallback: "Program",
+      statusLabels: {
+        planned: "Planned",
+        in_progress: "In progress",
+        completed: "Completed",
+        partial: "Partially completed",
+        failed: "Failed",
+        skipped: "Skipped",
+        moved: "Moved",
+      },
     },
   },
 };
