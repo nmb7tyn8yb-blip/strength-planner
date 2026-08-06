@@ -14,7 +14,7 @@ interface ProductRecommendationsProps {
 export default function ProductRecommendations({ placement, productIds, titleBg, titleEn }: ProductRecommendationsProps) {
   const { locale } = useLanguage();
   const ids = productIds ?? (placement ? PLACEMENT_MAP[placement] ?? [] : []);
-  const products = AFFILIATE_PRODUCTS.filter((p) => ids.includes(p.id));
+  const products = AFFILIATE_PRODUCTS.filter((p) => ids.includes(p.id) && p.link !== "#");
 
   if (products.length === 0) return null;
 
