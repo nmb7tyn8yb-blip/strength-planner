@@ -213,6 +213,19 @@ export interface TranslationShape {
     createPlanError: string;
     genericError: string;
   };
+  dangerZone: {
+    title: string;
+    description: string;
+    deleteButton: string;
+    confirmTitle: string;
+    confirmDescription: string;
+    confirmInputLabel: string;
+    confirmWord: string;
+    confirmButton: string;
+    cancelButton: string;
+    deleting: string;
+    error: string;
+  };
   programCalc: {
     backToProgram: string;
     title: string;
@@ -623,6 +636,19 @@ export const translations: Record<Locale, TranslationShape> = {
       createPlanError: "Не успяхме да създадем плана.",
       genericError: "Нещо се обърка. Опитай пак.",
     },
+    dangerZone: {
+      title: "Опасна зона",
+      description: "Изтриването на профила е необратимо — всичките ти планове, история и записи ще бъдат изтрити завинаги.",
+      deleteButton: "Изтрий профила си",
+      confirmTitle: "Наистина ли искаш да изтриеш профила си?",
+      confirmDescription: "Това действие не може да бъде отменено. За да потвърдиш, напиши ИЗТРИЙ в полето по-долу.",
+      confirmInputLabel: "Напиши ИЗТРИЙ, за да потвърдиш",
+      confirmWord: "ИЗТРИЙ",
+      confirmButton: "Потвърди изтриването",
+      cancelButton: "Отказ",
+      deleting: "Изтриваме…",
+      error: "Не успяхме да изтрием профила. Опитай пак или пиши ни.",
+    },
   },
   en: {
     nav: {
@@ -950,6 +976,19 @@ export const translations: Record<Locale, TranslationShape> = {
       saveExercisesError: "We couldn't save the exercises.",
       createPlanError: "We couldn't create the plan.",
       genericError: "Something went wrong. Please try again.",
+    },
+    dangerZone: {
+      title: "Danger zone",
+      description: "Deleting your account is permanent — all your plans, history, and records will be deleted forever.",
+      deleteButton: "Delete my account",
+      confirmTitle: "Are you sure you want to delete your account?",
+      confirmDescription: "This action can't be undone. To confirm, type DELETE in the field below.",
+      confirmInputLabel: "Type DELETE to confirm",
+      confirmWord: "DELETE",
+      confirmButton: "Confirm deletion",
+      cancelButton: "Cancel",
+      deleting: "Deleting…",
+      error: "We couldn't delete your account. Please try again or contact us.",
     },
   },
 };
