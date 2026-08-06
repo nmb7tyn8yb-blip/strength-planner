@@ -53,12 +53,29 @@ function StartPageInner() {
   });
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [planReady, setPlanReady] = useState(false);
+  const [existingActivePlan, setExistingActivePlan] = useState<{ name: string; date: string } | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       setStep(data.session ? "profile" : "auth");
 
       if (data.session?.user) {
+        const { data: activePlans } = await supabase
+          .from("generated_plans")
+          .select("start_date, programs(name), custom_programs(name)")
+          .eq("user_id", data.session.user.id)
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        const activePlan = activePlans?.[0] as any;
+        if (activePlan) {
+          setExistingActivePlan({
+            name: activePlan.programs?.name ?? activePlan.custom_programs?.name ?? "програма",
+            date: activePlan.start_date,
+          });
+        }
+
         const { data: maxRows } = await supabase
           .from("exercise_maxes")
           .select("one_rep_max, tested_at, exercises(name)")
@@ -353,6 +370,22 @@ function StartPageInner() {
             <p className="mt-2 text-chalkDim">
               {s.profileSubtitle}
             </p>
+
+            {existingActivePlan && (
+              <div className="mt-6 border-2 border-amber p-5">
+                <p className="font-display text-sm font-semibold uppercase tracking-wide text-amber">
+                  ⚠ Вече имаш активен план
+                </p>
+                <p className="mt-2 text-sm text-chalk">
+                  <strong>{existingActivePlan.name}</strong>, започнат на {existingActivePlan.date}. Ако
+                  продължиш, ще създадем <strong>нов, отделен</strong> план — старият ще си остане в
+                  историята ти (виждаш го от таблото), но вече няма да е активният по подразбиране.
+                </p>
+                <a href="/pro" className="mt-2 inline-block text-xs text-amber underline-offset-4 hover:underline">
+                  Pro поддържа неограничени активни планове едновременно →
+                </a>
+              </div>
+            )}
 
             <form onSubmit={handleProfileSubmit} className="mt-8 grid gap-6">
               <div>
