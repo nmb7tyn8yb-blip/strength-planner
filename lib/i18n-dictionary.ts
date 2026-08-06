@@ -217,7 +217,7 @@ export const translations: Record<Locale, TranslationShape> = {
       logout: "Изход",
     },
     footer: {
-      rights: "StrengthPlanner",
+      rights: "SilaPlan",
       privacy: "Поверителност",
       terms: "Общи условия",
     },
@@ -449,7 +449,7 @@ export const translations: Record<Locale, TranslationShape> = {
       logout: "Log Out",
     },
     footer: {
-      rights: "StrengthPlanner",
+      rights: "SilaPlan",
       privacy: "Privacy",
       terms: "Terms",
     },
