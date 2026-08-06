@@ -36,10 +36,29 @@ export default function CreateProgramPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [programName, setProgramName] = useState("");
   const [sessions, setSessions] = useState<SessionRow[]>([emptySession(0)]);
+  const [existingActivePlan, setExistingActivePlan] = useState<{ name: string; date: string } | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       setPhase(data.user ? "form" : "no-auth");
+
+      if (data.user) {
+        const { data: activePlans } = await supabase
+          .from("generated_plans")
+          .select("start_date, programs(name), custom_programs(name)")
+          .eq("user_id", data.user.id)
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        const activePlan = activePlans?.[0] as any;
+        if (activePlan) {
+          setExistingActivePlan({
+            name: activePlan.programs?.name ?? activePlan.custom_programs?.name ?? "програма",
+            date: activePlan.start_date,
+          });
+        }
+      }
     });
   }, []);
 
@@ -201,6 +220,22 @@ export default function CreateProgramPage() {
           седмица и ще ти показва днешната тренировка на ред, точно както при готовите
           програми. Промяна на тежести/повторения правиш, като редактираш шаблона си.
         </p>
+
+        {existingActivePlan && (
+          <div className="mt-6 border-2 border-amber p-5">
+            <p className="font-display text-sm font-semibold uppercase tracking-wide text-amber">
+              ⚠ Вече имаш активен план
+            </p>
+            <p className="mt-2 text-sm text-chalk">
+              <strong>{existingActivePlan.name}</strong>, започнат на {existingActivePlan.date}. Ако
+              продължиш, ще създадем <strong>нов, отделен</strong> план — старият ще си остане в
+              историята ти (виждаш го от таблото), но вече няма да е активният по подразбиране.
+            </p>
+            <a href="/pro" className="mt-2 inline-block text-xs text-amber underline-offset-4 hover:underline">
+              Pro поддържа неограничени активни планове едновременно →
+            </a>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-10 grid gap-8">
           <div>
