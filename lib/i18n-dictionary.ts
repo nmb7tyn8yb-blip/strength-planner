@@ -128,6 +128,47 @@ export interface TranslationShape {
     browseOthers: string;
     equipmentItems: Record<string, string>;
   };
+  today: {
+    loading: string;
+    noPlanTitle: string;
+    noPlanDesc: string;
+    browsePrograms: string;
+    unsupportedDesc: string;
+    backToDashboard: string;
+    doneTitle: string;
+    nextScheduled: (date: string) => string;
+    viewNext: string;
+    progressLabel: string;
+    setsOf: (done: number, total: number) => string;
+    confirmMarked: string;
+    confirmUnmark: string;
+    weightQuestion: string;
+    optionalLabel: string;
+    pauseLabel: string;
+    testLabel: string;
+    setsMarked: (done: number, total: number) => string;
+    finishButton: string;
+    failureTitle: string;
+    failureDesc: string;
+    saveContinue: string;
+    failureReasons: {
+      weight_too_high: string;
+      poor_sleep: string;
+      pain: string;
+      poor_technique: string;
+      insufficient_rest: string;
+      missed_previous_session: string;
+      illness: string;
+      other: string;
+    };
+    confirmMaxTitle: string;
+    confirmMaxDesc: string;
+    saveNewMax: string;
+    submitting: string;
+    errorPrefix: string;
+    weightPlaceholder: string;
+    forTodaySession: string;
+  };
   programCalc: {
     backToProgram: string;
     title: string;
@@ -437,6 +478,50 @@ export const translations: Record<Locale, TranslationShape> = {
       emailSubmitting: "Изпращаме…",
       emailSuccess: "Готово! Ще ти пишем с полезни съвети.",
     },
+    today: {
+      loading: "Зареждаме днешната ти тренировка…",
+      noPlanTitle: "Нямаш насрочена тренировка",
+      noPlanDesc: "Или още нямаш активен план, или си влязъл с друг акаунт.",
+      browsePrograms: "Разгледай програмите",
+      unsupportedDesc:
+        "Тази програма все още не е свързана с този екран — но всичките 8 програми вече имат готова логика, скоро ще бъде и тук.",
+      backToDashboard: "Обратно към таблото",
+      doneTitle: "Записано!",
+      nextScheduled: (date) => `Следващата ти тренировка е насрочена за ${date}, изчислена спрямо резултата ти днес.`,
+      viewNext: "Виж следващата тренировка →",
+      progressLabel: "Прогрес на тренировката",
+      setsOf: (done, total) => `${done} / ${total} серии`,
+      confirmMarked: "Отбелязано по план — кликни за отмяна",
+      confirmUnmark: "Отбележи като изпълнена по план",
+      weightQuestion: "С колко",
+      optionalLabel: "по избор",
+      pauseLabel: "Пауза 2-3 сек",
+      testLabel: "Проходка",
+      setsMarked: (done, total) => `${done} от ${total} серии отбелязани`,
+      finishButton: "Завърши тренировката →",
+      failureTitle: "Не всички серии бяха изпълнени",
+      failureDesc:
+        "Няма проблем — избери причината, за да запазим точна история. Решението (повторение на тежестта или намаление) следва вградените правила на Starting Strength автоматично.",
+      saveContinue: "Запази и продължи →",
+      failureReasons: {
+        weight_too_high: "Тежестта беше прекалено висока",
+        poor_sleep: "Недоспиване",
+        pain: "Болка/дискомфорт",
+        poor_technique: "Лоша техника",
+        insufficient_rest: "Недостатъчна почивка между сериите",
+        missed_previous_session: "Пропусната предишна тренировка",
+        illness: "Заболяване",
+        other: "Друга причина",
+      },
+      confirmMaxTitle: "Каква тежест реално вдигна на теста?",
+      confirmMaxDesc:
+        'Това е "проходката" — истинският опит за нов максимум, не планираната тежест. Въведи реално постигнатото, дори ако е различно от плана.',
+      saveNewMax: "Запази новия максимум →",
+      submitting: "Запазваме…",
+      errorPrefix: "Грешка: ",
+      weightPlaceholder: "напр. 20",
+      forTodaySession: "За днешната тренировка",
+    },
   },
   en: {
     nav: {
@@ -668,6 +753,50 @@ export const translations: Record<Locale, TranslationShape> = {
       emailSubmit: "Subscribe me",
       emailSubmitting: "Sending…",
       emailSuccess: "Done! We'll be in touch with useful tips.",
+    },
+    today: {
+      loading: "Loading today's workout…",
+      noPlanTitle: "No workout scheduled",
+      noPlanDesc: "Either you don't have an active plan yet, or you're logged in with a different account.",
+      browsePrograms: "Browse programs",
+      unsupportedDesc:
+        "This program isn't connected to this screen yet — but all 8 programs already have the logic ready, it's coming here soon.",
+      backToDashboard: "Back to dashboard",
+      doneTitle: "Saved!",
+      nextScheduled: (date) => `Your next workout is scheduled for ${date}, calculated from today's result.`,
+      viewNext: "View next workout →",
+      progressLabel: "Workout progress",
+      setsOf: (done, total) => `${done} / ${total} sets`,
+      confirmMarked: "Marked as planned — click to undo",
+      confirmUnmark: "Mark as done as planned",
+      weightQuestion: "How much",
+      optionalLabel: "optional",
+      pauseLabel: "Pause 2-3 sec",
+      testLabel: "Test attempt",
+      setsMarked: (done, total) => `${done} of ${total} sets marked`,
+      finishButton: "Finish workout →",
+      failureTitle: "Not all sets were completed",
+      failureDesc:
+        "No problem — pick the reason, so we keep an accurate history. The decision (repeat the weight or reduce it) follows Starting Strength's built-in rules automatically.",
+      saveContinue: "Save and continue →",
+      failureReasons: {
+        weight_too_high: "The weight was too heavy",
+        poor_sleep: "Poor sleep",
+        pain: "Pain/discomfort",
+        poor_technique: "Poor technique",
+        insufficient_rest: "Not enough rest between sets",
+        missed_previous_session: "Missed a previous session",
+        illness: "Illness",
+        other: "Other reason",
+      },
+      confirmMaxTitle: "What weight did you actually hit on the test?",
+      confirmMaxDesc:
+        "This is the \"test attempt\" — the real try at a new max, not the planned weight. Enter what you actually achieved, even if different from plan.",
+      saveNewMax: "Save new max →",
+      submitting: "Saving…",
+      errorPrefix: "Error: ",
+      weightPlaceholder: "e.g. 20",
+      forTodaySession: "For today's session",
     },
   },
 };
