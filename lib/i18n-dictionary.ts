@@ -287,6 +287,11 @@ export interface TranslationShape {
     errorGeneric: string;
     retryButton: string;
     marketingLabel: string;
+    authErrorRateLimit: (seconds: string) => string;
+    authErrorAlreadyRegistered: string;
+    authErrorInvalidCredentials: string;
+    authErrorWeakPassword: string;
+    authErrorEmailNotConfirmed: string;
   };
 }
 
@@ -480,6 +485,11 @@ export const translations: Record<Locale, TranslationShape> = {
       errorGeneric: "Нещо се обърка при запазването. Опитай пак.",
       retryButton: "Пробвай пак",
       marketingLabel: "Искам да получавам полезни тренировъчни съвети по имейл (по избор)",
+      authErrorRateLimit: (seconds) => `От съображения за сигурност можеш да опиташ пак след ${seconds} секунди.`,
+      authErrorAlreadyRegistered: "Вече има профил с този имейл — опитай да влезеш вместо да се регистрираш.",
+      authErrorInvalidCredentials: "Грешен имейл или парола.",
+      authErrorWeakPassword: "Паролата трябва да е поне 6 символа.",
+      authErrorEmailNotConfirmed: "Провери пощата си — трябва да потвърдиш имейла преди да влезеш.",
     },
     programCalc: {
       backToProgram: "← Назад към програмата",
@@ -803,6 +813,11 @@ export const translations: Record<Locale, TranslationShape> = {
       errorGeneric: "Something went wrong while saving. Please try again.",
       retryButton: "Try again",
       marketingLabel: "I'd like to receive useful training tips by email (optional)",
+      authErrorRateLimit: (seconds) => `For security purposes, you can only try again after ${seconds} seconds.`,
+      authErrorAlreadyRegistered: "An account with this email already exists — try logging in instead of signing up.",
+      authErrorInvalidCredentials: "Incorrect email or password.",
+      authErrorWeakPassword: "Password must be at least 6 characters.",
+      authErrorEmailNotConfirmed: "Check your inbox — you need to confirm your email before logging in.",
     },
     programCalc: {
       backToProgram: "← Back to program",
