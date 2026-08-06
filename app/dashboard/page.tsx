@@ -10,23 +10,6 @@ import { useLanguage } from "@/components/language-provider";
 import { useUnit } from "@/components/unit-provider";
 import { displayWeight } from "@/lib/units";
 
-const LIFT_LABEL: Record<string, string> = {
-  squat: "Клек",
-  bench_press: "Лежанка",
-  deadlift: "Мъртва тяга",
-  overhead_press: "Военна преса",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  planned: "Планирана",
-  in_progress: "В прогрес",
-  completed: "Изпълнена",
-  partial: "Частично изпълнена",
-  failed: "Неуспешна",
-  skipped: "Пропусната",
-  moved: "Преместена",
-};
-
 const STATUS_COLOR: Record<string, string> = {
   planned: "text-steelLight border-steel",
   in_progress: "text-amber border-amber",
@@ -41,6 +24,7 @@ type Phase = "loading" | "no-plan" | "ready";
 
 export default function DashboardPage() {
   const { localizedHref, t, locale } = useLanguage();
+  const d = t.dashboard;
   const dz = t.dangerZone;
   const { unit } = useUnit();
   const [phase, setPhase] = useState<Phase>("loading");
@@ -188,7 +172,7 @@ export default function DashboardPage() {
   const past = showAllPast ? allPast : allPast.slice(0, 8);
 
   if (phase === "loading" && allPlans.length === 0) {
-    return <LoadingScreen label="Зареждаме таблото ти…" />;
+    return <LoadingScreen label={d.loading} />;
   }
 
   function renderDangerZone() {
@@ -243,10 +227,10 @@ export default function DashboardPage() {
     return (
       <>
         <EmptyState
-          title="Нямаш активен план"
-          description="Избери програма от каталога — калкулаторът работи веднага, без регистрация, ако само искаш да провериш числата."
+          title={d.noPlanTitle}
+          description={d.noPlanDesc}
           ctaHref={localizedHref("/programs")}
-          ctaLabel="Разгледай програмите"
+          ctaLabel={d.browsePrograms}
         />
         {isAuthenticated && (
           <div className="bg-graphite px-6 pb-16">
@@ -264,7 +248,7 @@ export default function DashboardPage() {
         {allPlans.length > 1 && (
           <div className="mb-8">
             <label className="text-xs uppercase tracking-widest text-chalkDim">
-              Твоите планове ({allPlans.length})
+              {d.yourPlans(allPlans.length)}
             </label>
             <select
               value={selectedPlanId}
@@ -273,7 +257,7 @@ export default function DashboardPage() {
             >
               {allPlans.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.programs?.name ?? p.custom_programs?.name ?? "Програма"} — {p.start_date}
+                  {p.programs?.name ?? p.custom_programs?.name ?? d.programFallback} — {p.start_date}
                   {p.status !== "active" ? ` (${p.status})` : ""}
                 </option>
               ))}
@@ -297,13 +281,13 @@ export default function DashboardPage() {
         {/* Текущи тежести */}
         {currentWeights && (
           <div className="mt-10">
-            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">Текущи тежести</h2>
+            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">{d.currentWeights}</h2>
             <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden border border-white/10 bg-white/10 sm:grid-cols-4">
               {Object.entries(currentWeights)
                 .filter(([, v]) => v !== undefined)
                 .map(([lift, weight]) => (
                   <div key={lift} className="bg-graphite p-5">
-                    <span className="text-xs uppercase tracking-widest text-chalkDim">{LIFT_LABEL[lift]}</span>
+                    <span className="text-xs uppercase tracking-widest text-chalkDim">{t.calculator.exercises[lift as keyof typeof t.calculator.exercises]}</span>
                     <p className="mt-1 font-display text-2xl font-bold text-amber">
                       {displayWeight(weight as number, unit)} <span className="text-sm text-chalkDim">{unit}</span>
                     </p>
@@ -317,26 +301,24 @@ export default function DashboardPage() {
         <div className="mt-10 grid grid-cols-3 gap-px overflow-hidden border border-white/10 bg-white/10">
           <div className="bg-graphite p-5 text-center">
             <p className="font-display text-3xl font-bold text-chalk">{totalDone}</p>
-            <p className="mt-1 text-xs uppercase tracking-widest text-chalkDim">Изиграни тренировки</p>
+            <p className="mt-1 text-xs uppercase tracking-widest text-chalkDim">{d.completedWorkouts}</p>
           </div>
           <div className="bg-graphite p-5 text-center">
             <p className="font-display text-3xl font-bold text-chalk">
               {successRate !== null ? `${successRate}%` : "—"}
             </p>
-            <p className="mt-1 text-xs uppercase tracking-widest text-chalkDim">Успеваемост</p>
+            <p className="mt-1 text-xs uppercase tracking-widest text-chalkDim">{d.successRate}</p>
           </div>
           <div className="bg-graphite p-5 text-center">
             <p className="font-display text-3xl font-bold text-chalk">{allUpcoming.length}</p>
-            <p className="mt-1 text-xs uppercase tracking-widest text-chalkDim">Предстоящи</p>
+            <p className="mt-1 text-xs uppercase tracking-widest text-chalkDim">{d.upcoming}</p>
           </div>
         </div>
 
         {/* Структура на програмата */}
         {(howItWorks || customTemplate.length > 0) && (
           <div className="mt-10">
-            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
-              Структура на програмата
-            </h2>
+            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">{d.programStructure}</h2>
 
             {howItWorks && (
               <p className="mt-3 border border-white/10 p-5 text-sm leading-relaxed text-chalk">{howItWorks}</p>
@@ -369,18 +351,18 @@ export default function DashboardPage() {
         {/* Предстоящи тренировки */}
         <div className="mt-10">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">Предстоящи</h2>
+            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">{d.upcoming}</h2>
             {allUpcoming.length > 3 && (
               <button
                 onClick={() => setShowAllUpcoming(!showAllUpcoming)}
                 className="text-xs text-steelLight underline-offset-4 hover:underline"
               >
-                {showAllUpcoming ? "Скрий" : `Виж всички (${allUpcoming.length})`}
+                {showAllUpcoming ? d.hide : d.viewAll(allUpcoming.length)}
               </button>
             )}
           </div>
           <div className="mt-3 grid gap-2">
-            {upcoming.length === 0 && <p className="text-sm text-chalkDim">Няма насрочени тренировки.</p>}
+            {upcoming.length === 0 && <p className="text-sm text-chalkDim">{d.noUpcoming}</p>}
             {upcoming.map((w) => (
               <div
                 key={w.id}
@@ -396,25 +378,25 @@ export default function DashboardPage() {
         {/* Изминали тренировки */}
         <div className="mt-10">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">Последни тренировки</h2>
+            <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">{d.recentWorkouts}</h2>
             {allPast.length > 8 && (
               <button
                 onClick={() => setShowAllPast(!showAllPast)}
                 className="text-xs text-steelLight underline-offset-4 hover:underline"
               >
-                {showAllPast ? "Скрий" : `Виж всички (${allPast.length})`}
+                {showAllPast ? d.hide : d.viewAll(allPast.length)}
               </button>
             )}
           </div>
           <div className="mt-3 grid gap-2">
-            {past.length === 0 && <p className="text-sm text-chalkDim">Още нямаш изиграни тренировки.</p>}
+            {past.length === 0 && <p className="text-sm text-chalkDim">{d.noRecent}</p>}
             {past.map((w) => (
               <div key={w.id} className="flex items-center justify-between border border-white/10 px-4 py-3">
                 <span className="text-chalk">{w.session_name}</span>
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-chalkDim">{w.scheduled_date}</span>
                   <span className={`border px-2 py-0.5 text-xs uppercase tracking-wide ${STATUS_COLOR[w.status] ?? "border-white/10 text-chalkDim"}`}>
-                    {STATUS_LABEL[w.status] ?? w.status}
+                    {d.statusLabels[w.status as keyof typeof d.statusLabels] ?? w.status}
                   </span>
                 </div>
               </div>
@@ -424,15 +406,15 @@ export default function DashboardPage() {
 
         {/* История на сериите */}
         <div className="mt-10">
-          <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">История на сериите</h2>
+          <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">{d.historyTitle}</h2>
           <div className="mt-3 overflow-hidden border border-white/10">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-chalkDim">
-                  <th className="p-3">Дата</th>
-                  <th className="p-3">Упражнение</th>
-                  <th className="p-3">Тегло</th>
-                  <th className="p-3">Повторения</th>
+                  <th className="p-3">{d.dateHeader}</th>
+                  <th className="p-3">{d.exerciseHeader}</th>
+                  <th className="p-3">{d.weightHeader}</th>
+                  <th className="p-3">{d.repsHeader}</th>
                 </tr>
               </thead>
               <tbody>
@@ -447,7 +429,7 @@ export default function DashboardPage() {
                 {history.length === 0 && (
                   <tr>
                     <td colSpan={4} className="p-3 text-chalkDim">
-                      Все още няма записана история.
+                      {d.noHistory}
                     </td>
                   </tr>
                 )}
