@@ -14,7 +14,7 @@ export default function TermsPage() {
           <section>
             <h2 className="font-display text-lg font-semibold text-amber">1. Приемане на условията</h2>
             <p className="mt-2 text-chalkDim">
-              С регистрация и използване на StrengthPlanner ("Услугата") приемаш настоящите условия. Ако
+              С регистрация и използване на SilaPlan ("Услугата") приемаш настоящите условия. Ако
               не си съгласен/съгласна, моля не използвай Услугата.
             </p>
           </section>
@@ -22,7 +22,7 @@ export default function TermsPage() {
           <section>
             <h2 className="font-display text-lg font-semibold text-amber">2. Описание на услугата</h2>
             <p className="mt-2 text-chalkDim">
-              StrengthPlanner изчислява тренировъчни планове по избрана силова програма (или собствена,
+              SilaPlan изчислява тренировъчни планове по избрана силова програма (или собствена,
               създадена от теб), следи прогреса ти и показва статистика. Изчисленията се базират на данни,
               които сам въвеждаш (максимуми, тегло, представяне).
             </p>
