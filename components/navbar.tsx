@@ -88,7 +88,11 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-graphite/95 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href={localizedHref("/")} className="font-display text-lg font-semibold uppercase tracking-wider text-chalk">
+        <Link
+          href={localizedHref("/")}
+          className="flex items-center gap-2 font-display text-lg font-semibold uppercase tracking-wider text-chalk"
+        >
+          <img src="/logo.png" alt="SilaPlan" className="h-9 w-9" />
           Sila<span className="text-amber">Plan</span>
         </Link>
 
