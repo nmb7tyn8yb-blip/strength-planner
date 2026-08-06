@@ -50,6 +50,7 @@ export default function DashboardPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [programName, setProgramName] = useState("");
   const [programSlug, setProgramSlug] = useState("");
@@ -70,6 +71,7 @@ export default function DashboardPage() {
     setPhase("loading");
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
+    setIsAuthenticated(!!userId);
     if (!userId) {
       setPhase("no-plan");
       return;
@@ -189,14 +191,69 @@ export default function DashboardPage() {
     return <LoadingScreen label="Зареждаме таблото ти…" />;
   }
 
+  function renderDangerZone() {
+    return (
+      <div className="mt-16 border-t border-white/10 pt-8">
+        {!showDeleteConfirm ? (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="text-sm text-chalkDim underline-offset-4 hover:text-rust hover:underline"
+          >
+            {dz.title}
+          </button>
+        ) : (
+          <div className="max-w-md border border-white/10 p-5">
+            <h3 className="font-display text-base font-semibold text-chalk">{dz.confirmTitle}</h3>
+            <p className="mt-2 text-sm text-chalkDim">{dz.confirmDescription}</p>
+            <label className="mt-4 block text-xs uppercase tracking-widest text-chalkDim">
+              {dz.confirmInputLabel}
+            </label>
+            <input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              className="mt-1 w-full border-2 border-white/15 bg-transparent px-4 py-2 text-chalk focus:border-rust"
+            />
+            {deleteError && <p className="mt-2 text-sm text-rust">{deleteError}</p>}
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== dz.confirmWord || deleting}
+                className="border-2 border-rust bg-rust px-5 py-3 font-display text-sm font-semibold uppercase tracking-wide text-graphite transition hover:bg-transparent hover:text-rust disabled:opacity-40"
+              >
+                {deleting ? dz.deleting : dz.confirmButton}
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteConfirmText("");
+                  setDeleteError("");
+                }}
+                className="border-2 border-white/20 px-5 py-3 font-display text-sm font-semibold uppercase tracking-wide text-chalkDim transition hover:border-white/50"
+              >
+                {dz.cancelButton}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (phase === "no-plan") {
     return (
-      <EmptyState
-        title="Нямаш активен план"
-        description="Избери програма от каталога — калкулаторът работи веднага, без регистрация, ако само искаш да провериш числата."
-        ctaHref={localizedHref("/programs")}
-        ctaLabel="Разгледай програмите"
-      />
+      <>
+        <EmptyState
+          title="Нямаш активен план"
+          description="Избери програма от каталога — калкулаторът работи веднага, без регистрация, ако само искаш да провериш числата."
+          ctaHref={localizedHref("/programs")}
+          ctaLabel="Разгледай програмите"
+        />
+        {isAuthenticated && (
+          <div className="bg-graphite px-6 pb-16">
+            <div className="mx-auto max-w-4xl">{renderDangerZone()}</div>
+          </div>
+        )}
+      </>
     );
   }
 
@@ -400,52 +457,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Опасна зона — изтриване на профил */}
-        <div className="mt-16 border-2 border-rust/50 p-6">
-          <h2 className="font-display text-sm uppercase tracking-widest text-rust">{dz.title}</h2>
-          <p className="mt-2 text-sm text-chalkDim">{dz.description}</p>
-
-          {!showDeleteConfirm ? (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="mt-4 border-2 border-rust px-5 py-3 font-display text-sm font-semibold uppercase tracking-wide text-rust transition hover:bg-rust hover:text-graphite"
-            >
-              {dz.deleteButton}
-            </button>
-          ) : (
-            <div className="mt-4 border border-rust/30 p-5">
-              <h3 className="font-display text-base font-semibold text-rust">{dz.confirmTitle}</h3>
-              <p className="mt-2 text-sm text-chalkDim">{dz.confirmDescription}</p>
-              <label className="mt-4 block text-xs uppercase tracking-widest text-chalkDim">
-                {dz.confirmInputLabel}
-              </label>
-              <input
-                value={deleteConfirmText}
-                onChange={(e) => setDeleteConfirmText(e.target.value)}
-                className="mt-1 w-full max-w-xs border-2 border-white/15 bg-transparent px-4 py-2 text-chalk focus:border-rust"
-              />
-              {deleteError && <p className="mt-2 text-sm text-rust">{deleteError}</p>}
-              <div className="mt-4 flex gap-3">
-                <button
-                  onClick={handleDeleteAccount}
-                  disabled={deleteConfirmText !== dz.confirmWord || deleting}
-                  className="border-2 border-rust bg-rust px-5 py-3 font-display text-sm font-semibold uppercase tracking-wide text-graphite transition hover:bg-transparent hover:text-rust disabled:opacity-40"
-                >
-                  {deleting ? dz.deleting : dz.confirmButton}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowDeleteConfirm(false);
-                    setDeleteConfirmText("");
-                    setDeleteError("");
-                  }}
-                  className="border-2 border-white/20 px-5 py-3 font-display text-sm font-semibold uppercase tracking-wide text-chalkDim transition hover:border-white/50"
-                >
-                  {dz.cancelButton}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        {renderDangerZone()}
       </div>
     </main>
   );
