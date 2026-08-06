@@ -32,7 +32,7 @@ export default function PicksPage() {
 
         <div className="mt-12 grid gap-12">
           {PICKS_CATEGORIES.map((cat) => {
-            const products = AFFILIATE_PRODUCTS.filter((p) => p.category === cat.key);
+            const products = AFFILIATE_PRODUCTS.filter((p) => p.category === cat.key && p.link !== "#");
             if (products.length === 0) return null;
 
             return (
@@ -48,6 +48,12 @@ export default function PicksPage() {
               </div>
             );
           })}
+
+          {AFFILIATE_PRODUCTS.every((p) => p.link === "#") && (
+            <p className="text-chalkDim">
+              {isEn ? "Picks are coming soon — check back shortly." : "Препоръките предстоят — очаквай ги съвсем скоро."}
+            </p>
+          )}
         </div>
       </div>
     </main>
