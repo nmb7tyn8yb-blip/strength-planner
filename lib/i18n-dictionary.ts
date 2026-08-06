@@ -637,7 +637,7 @@ export const translations: Record<Locale, TranslationShape> = {
       genericError: "Нещо се обърка. Опитай пак.",
     },
     dangerZone: {
-      title: "Опасна зона",
+      title: "Изтрий профила си",
       description: "Изтриването на профила е необратимо — всичките ти планове, история и записи ще бъдат изтрити завинаги.",
       deleteButton: "Изтрий профила си",
       confirmTitle: "Наистина ли искаш да изтриеш профила си?",
@@ -978,7 +978,7 @@ export const translations: Record<Locale, TranslationShape> = {
       genericError: "Something went wrong. Please try again.",
     },
     dangerZone: {
-      title: "Danger zone",
+      title: "Delete account",
       description: "Deleting your account is permanent — all your plans, history, and records will be deleted forever.",
       deleteButton: "Delete my account",
       confirmTitle: "Are you sure you want to delete your account?",
