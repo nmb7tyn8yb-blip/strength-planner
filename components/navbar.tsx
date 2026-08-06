@@ -92,7 +92,7 @@ export default function Navbar() {
           href={localizedHref("/")}
           className="flex items-center gap-2 font-display text-lg font-semibold uppercase tracking-wider text-chalk"
         >
-          <img src="/logo.png" alt="SilaPlan" className="h-9 w-9" />
+          <img src="/logo.png" alt="SilaPlan" className="h-9 w-9 object-contain" />
           Sila<span className="text-amber">Plan</span>
         </Link>
 
