@@ -25,17 +25,19 @@ function emptyExercise(): ExerciseRow {
   return { name: "", sets: "3", reps: "10", weight: "0", rest: "90", isAmrap: false };
 }
 
-function emptySession(index: number): SessionRow {
-  return { name: `Ден ${index + 1}`, exercises: [emptyExercise()] };
+function emptySession(name: string): SessionRow {
+  return { name, exercises: [emptyExercise()] };
 }
 
 export default function CreateProgramPage() {
-  const { localizedHref } = useLanguage();
+  const { localizedHref, t } = useLanguage();
+  const cp = t.createProgram;
+  const aw = t.activePlanWarning;
   const router = useRouter();
   const [phase, setPhase] = useState<"checking" | "no-auth" | "form" | "saving" | "done" | "error">("checking");
   const [errorMessage, setErrorMessage] = useState("");
   const [programName, setProgramName] = useState("");
-  const [sessions, setSessions] = useState<SessionRow[]>([emptySession(0)]);
+  const [sessions, setSessions] = useState<SessionRow[]>([emptySession(cp.dayNamePrefix(1))]);
   const [existingActivePlan, setExistingActivePlan] = useState<{ name: string; date: string } | null>(null);
 
   useEffect(() => {
@@ -89,7 +91,7 @@ export default function CreateProgramPage() {
   }
 
   function addSession() {
-    setSessions([...sessions, emptySession(sessions.length)]);
+    setSessions([...sessions, emptySession(cp.dayNamePrefix(sessions.length + 1))]);
   }
 
   function removeSession(sIndex: number) {
@@ -104,15 +106,15 @@ export default function CreateProgramPage() {
     try {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user?.id;
-      if (!userId) throw new Error("Сесията изтече — влез отново.");
+      if (!userId) throw new Error(cp.sessionExpiredError);
 
       // 1. самата програма
       const { data: customProgram, error: programError } = await supabase
         .from("custom_programs")
-        .insert({ user_id: userId, name: programName || "Моята програма", days_per_week: sessions.length })
+        .insert({ user_id: userId, name: programName || cp.title, days_per_week: sessions.length })
         .select()
         .single();
-      if (programError || !customProgram) throw new Error("Не успяхме да запазим програмата.");
+      if (programError || !customProgram) throw new Error(cp.saveProgramError);
 
       // 2. сесиите + упражненията
       for (let i = 0; i < sessions.length; i++) {
@@ -121,11 +123,11 @@ export default function CreateProgramPage() {
           .insert({
             custom_program_id: customProgram.id,
             day_order: i + 1,
-            session_name: sessions[i].name || `Ден ${i + 1}`,
+            session_name: sessions[i].name || cp.dayNamePrefix(i + 1),
           })
           .select()
           .single();
-        if (sessionError || !sessionRow) throw new Error("Не успяхме да запазим тренировъчния ден.");
+        if (sessionError || !sessionRow) throw new Error(cp.saveDayError);
 
         const exerciseRows = sessions[i].exercises
           .filter((ex) => ex.name.trim() !== "")
@@ -142,7 +144,7 @@ export default function CreateProgramPage() {
 
         if (exerciseRows.length > 0) {
           const { error: exercisesError } = await supabase.from("custom_program_exercises").insert(exerciseRows);
-          if (exercisesError) throw new Error("Не успяхме да запазим упражненията.");
+          if (exercisesError) throw new Error(cp.saveExercisesError);
         }
       }
 
@@ -158,33 +160,31 @@ export default function CreateProgramPage() {
         })
         .select()
         .single();
-      if (planError || !plan) throw new Error("Не успяхме да създадем плана.");
+      if (planError || !plan) throw new Error(cp.createPlanError);
 
       await createFirstCustomWorkout(supabase, plan.id, customProgram.id, startDate);
 
       setPhase("done");
     } catch (err: any) {
       console.error(err);
-      setErrorMessage(err?.message || "Нещо се обърка. Опитай пак.");
+      setErrorMessage(err?.message || cp.genericError);
       setPhase("error");
     }
   }
 
-  if (phase === "checking") return <LoadingScreen label="Проверяваме профила ти…" />;
+  if (phase === "checking") return <LoadingScreen label={cp.loadingProfile} />;
 
   if (phase === "no-auth") {
     return (
       <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
         <div className="mx-auto max-w-xl text-center">
-          <h1 className="font-display text-2xl font-semibold">Нужен е профил</h1>
-          <p className="mt-3 text-chalkDim">
-            За да създадеш и следиш собствена програма, първо ти трябва профил (безплатно).
-          </p>
+          <h1 className="font-display text-2xl font-semibold">{cp.authRequired}</h1>
+<p className="mt-3 text-chalkDim">{cp.authRequiredDesc}</p>
           <a
             href={localizedHref("/start")}
             className="mt-6 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
           >
-            Направи профил →
+            {cp.makeProfile}
           </a>
         </div>
       </main>
@@ -195,16 +195,13 @@ export default function CreateProgramPage() {
     return (
       <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
         <div className="mx-auto max-w-xl text-center">
-          <h1 className="font-display text-3xl font-semibold text-amber">Готово!</h1>
-          <p className="mt-4 text-chalkDim">
-            Твоята програма е запазена. Първата тренировка вече те чака — сайтът ще
-            повтаря шаблона ти всяка седмица и ще следи прогреса ти автоматично.
-          </p>
+          <h1 className="font-display text-3xl font-semibold text-amber">{cp.doneTitle}</h1>
+<p className="mt-4 text-chalkDim">{cp.doneDesc}</p>
           <a
             href={localizedHref("/today")}
             className="mt-6 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
           >
-            Към днешната тренировка →
+            {cp.goToToday}
           </a>
         </div>
       </main>
@@ -214,36 +211,29 @@ export default function CreateProgramPage() {
   return (
     <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
       <div className="mx-auto max-w-3xl">
-        <h1 className="font-display text-3xl font-semibold md:text-4xl">Създай своя програма</h1>
-        <p className="mt-2 text-chalkDim">
-          Определи седмичния си шаблон веднъж — сайтът ще го повтаря автоматично всяка
-          седмица и ще ти показва днешната тренировка на ред, точно както при готовите
-          програми. Промяна на тежести/повторения правиш, като редактираш шаблона си.
-        </p>
+        <h1 className="font-display text-3xl font-semibold md:text-4xl">{cp.title}</h1>
+<p className="mt-2 text-chalkDim">{cp.subtitle}</p>
 
         {existingActivePlan && (
           <div className="mt-6 border-2 border-amber p-5">
-            <p className="font-display text-sm font-semibold uppercase tracking-wide text-amber">
-              ⚠ Вече имаш активен план
-            </p>
+            <p className="font-display text-sm font-semibold uppercase tracking-wide text-amber">{aw.badge}</p>
             <p className="mt-2 text-sm text-chalk">
-              <strong>{existingActivePlan.name}</strong>, започнат на {existingActivePlan.date}. Ако
-              продължиш, ще създадем <strong>нов, отделен</strong> план — старият ще си остане в
-              историята ти (виждаш го от таблото), но вече няма да е активният по подразбиране.
+              <strong>{existingActivePlan.name}</strong>, {aw.startedOn(existingActivePlan.date)} {aw.createNew}{" "}
+              <strong>{aw.newSeparate}</strong> {aw.restOfSentence}
             </p>
-            <a href="/pro" className="mt-2 inline-block text-xs text-amber underline-offset-4 hover:underline">
-              Pro поддържа неограничени активни планове едновременно →
+            <a href={localizedHref("/pro")} className="mt-2 inline-block text-xs text-amber underline-offset-4 hover:underline">
+              {aw.proLink}
             </a>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="mt-10 grid gap-8">
           <div>
-            <label className="text-xs uppercase tracking-widest text-chalkDim">Име на програмата</label>
+            <label className="text-xs uppercase tracking-widest text-chalkDim">{cp.programNameLabel}</label>
             <input
               value={programName}
               onChange={(e) => setProgramName(e.target.value)}
-              placeholder="напр. Моята сплит програма"
+              placeholder={cp.programNamePlaceholder}
               className="mt-1 w-full border-2 border-white/15 bg-transparent px-4 py-3 text-chalk placeholder:text-chalkDim focus:border-amber"
             />
           </div>
@@ -262,18 +252,18 @@ export default function CreateProgramPage() {
                     onClick={() => removeSession(sIndex)}
                     className="border-2 border-white/15 px-3 py-2 text-xs uppercase tracking-wide text-chalkDim transition hover:border-rust hover:text-rust"
                   >
-                    Изтрий деня
+                    {cp.deleteDay}
                   </button>
                 )}
               </div>
 
               <div className="mt-4 grid gap-3">
                 <div className="grid grid-cols-12 gap-2 px-3 text-xs uppercase tracking-wide text-chalkDim">
-                  <span className="col-span-4">Упражнение</span>
-                  <span className="col-span-2 text-center">Серии</span>
-                  <span className="col-span-2 text-center">Повторения</span>
-                  <span className="col-span-2 text-center">Кг</span>
-                  <span className="col-span-1 text-center">Почивка сек</span>
+                  <span className="col-span-4">{cp.exerciseHeader}</span>
+                  <span className="col-span-2 text-center">{cp.setsHeader}</span>
+                  <span className="col-span-2 text-center">{cp.repsHeader}</span>
+                  <span className="col-span-2 text-center">{cp.kgHeader}</span>
+                  <span className="col-span-1 text-center">{cp.restHeader}</span>
                   <span className="col-span-1"></span>
                 </div>
                 {session.exercises.map((ex, eIndex) => (
@@ -281,7 +271,7 @@ export default function CreateProgramPage() {
                     <input
                       value={ex.name}
                       onChange={(e) => updateExercise(sIndex, eIndex, "name", e.target.value)}
-                      placeholder="Упражнение"
+                      placeholder={cp.exercisePlaceholder}
                       className="col-span-4 border-2 border-white/15 bg-transparent px-2 py-2 text-sm text-chalk placeholder:text-chalkDim focus:border-amber"
                     />
                     <input
@@ -289,7 +279,7 @@ export default function CreateProgramPage() {
                       onChange={(e) => updateExercise(sIndex, eIndex, "sets", e.target.value)}
                       type="number"
                       min={1}
-                      placeholder="Серии"
+                      placeholder={cp.setsPlaceholder}
                       className="col-span-2 border-2 border-white/15 bg-transparent px-2 py-2 text-center text-sm text-chalk placeholder:text-chalkDim focus:border-amber"
                     />
                     <input
@@ -297,7 +287,7 @@ export default function CreateProgramPage() {
                       onChange={(e) => updateExercise(sIndex, eIndex, "reps", e.target.value)}
                       type="number"
                       min={1}
-                      placeholder="Повт."
+                      placeholder={cp.repsPlaceholder}
                       className="col-span-2 border-2 border-white/15 bg-transparent px-2 py-2 text-center text-sm text-chalk placeholder:text-chalkDim focus:border-amber"
                     />
                     <input
@@ -306,7 +296,7 @@ export default function CreateProgramPage() {
                       type="number"
                       min={0}
                       step={0.5}
-                      placeholder="Кг"
+                      placeholder={cp.kgPlaceholder}
                       className="col-span-2 border-2 border-white/15 bg-transparent px-2 py-2 text-center text-sm text-chalk placeholder:text-chalkDim focus:border-amber"
                     />
                     <input
@@ -314,14 +304,14 @@ export default function CreateProgramPage() {
                       onChange={(e) => updateExercise(sIndex, eIndex, "rest", e.target.value)}
                       type="number"
                       min={0}
-                      placeholder="Почивка сек"
+                      placeholder={cp.restPlaceholder}
                       className="col-span-1 border-2 border-white/15 bg-transparent px-2 py-2 text-center text-sm text-chalk placeholder:text-chalkDim focus:border-amber"
                     />
                     <button
                       type="button"
                       onClick={() => removeExercise(sIndex, eIndex)}
                       className="col-span-1 text-chalkDim transition hover:text-rust"
-                      aria-label="Изтрий упражнението"
+                      aria-label={cp.deleteExerciseLabel}
                     >
                       ✕
                     </button>
@@ -334,7 +324,7 @@ export default function CreateProgramPage() {
                 onClick={() => addExercise(sIndex)}
                 className="mt-3 text-sm text-steelLight underline-offset-4 hover:underline"
               >
-                + Добави упражнение
+                {cp.addExercise}
               </button>
             </div>
           ))}
@@ -344,7 +334,7 @@ export default function CreateProgramPage() {
             onClick={addSession}
             className="border-2 border-white/20 px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-chalk transition hover:border-white/50"
           >
-            + Добави тренировъчен ден
+            {cp.addDay}
           </button>
 
           {errorMessage && <p className="text-sm text-rust">{errorMessage}</p>}
@@ -354,7 +344,7 @@ export default function CreateProgramPage() {
             disabled={phase === "saving"}
             className="border-2 border-amber bg-amber px-6 py-4 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber disabled:opacity-50"
           >
-            {phase === "saving" ? "Запазваме…" : "Създай програмата →"}
+            {phase === "saving" ? cp.savingButton : cp.createButton}
           </button>
         </form>
       </div>
