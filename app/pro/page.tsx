@@ -105,7 +105,7 @@ export default function ProPage() {
           {isEn ? "Coming soon" : "Очаквайте скоро"}
         </p>
         <h1 className="mt-3 font-display text-4xl font-semibold md:text-5xl">
-          Strength<span className="text-amber">Planner</span> Pro
+          Sila<span className="text-amber">Plan</span> Pro
         </h1>
         <p className="mt-4 max-w-xl text-lg leading-relaxed text-chalkDim">
           {isEn
