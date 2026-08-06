@@ -529,7 +529,7 @@ export default function TodayPage() {
       <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
         <div className="mx-auto max-w-xl text-center">
           <h1 className="font-display text-3xl font-semibold text-amber">{tt.doneTitle}</h1>
-<p className="mt-4 text-chalkDim">{tt.nextScheduled(nextDate)}</p>
+<p className="mt-4 text-chalkDim">{tt.nextScheduled(nextDate ?? "")}</p>
           <button
             onClick={loadWorkout}
             className="mt-8 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
