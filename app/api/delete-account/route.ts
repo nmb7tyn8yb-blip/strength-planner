@@ -20,7 +20,9 @@ export async function POST(req: NextRequest) {
 
   const token = authHeader.replace("Bearer ", "");
 
-  const supabaseAuth = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+  const supabaseAuth = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
   const {
     data: { user },
     error: userError,
@@ -31,7 +33,13 @@ export async function POST(req: NextRequest) {
   }
 
   const userId = user.id;
-  const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
 
   try {
     // 1. Готови планове → тренировки → серии → изпълнени серии (деца преди родители)
