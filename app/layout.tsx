@@ -6,7 +6,7 @@ import { LanguageProvider } from "@/components/language-provider";
 import { UnitProvider } from "@/components/unit-provider";
 
 export const metadata: Metadata = {
-  title: "Strength Planner",
+  title: "SilaPlan",
   description: "Персонален генератор и дневник за силови тренировки",
 };
 
