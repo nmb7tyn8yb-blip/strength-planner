@@ -10,6 +10,7 @@ import { useUnit } from "@/components/unit-provider";
 import { displayWeight, inputToKg } from "@/lib/units";
 import ProductRecommendations from "@/components/product-recommendations";
 import { EXERCISE_PLACEMENT_MAP } from "@/lib/affiliate-products";
+import { translateWorkoutText } from "@/lib/translate-workout-text";
 import {
   completeStartingStrengthWorkout,
   completeWendlerWorkout,
@@ -59,7 +60,8 @@ interface WorkoutSetRow {
 type Phase = "loading" | "no-plan" | "unsupported" | "workout" | "failure-reason" | "confirm-max" | "submitting" | "done" | "error";
 
 export default function TodayPage() {
-  const { localizedHref } = useLanguage();
+  const { localizedHref, locale, t } = useLanguage();
+  const tt = t.today;
   const { unit } = useUnit();
   const [phase, setPhase] = useState<Phase>("loading");
   const [errorMessage, setErrorMessage] = useState("");
@@ -248,7 +250,7 @@ export default function TodayPage() {
       setPhase("done");
     } catch (err: any) {
       console.error(err);
-      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
+      setErrorMessage(tt.errorPrefix + (err?.message || JSON.stringify(err)));
       setPhase("error");
     }
   }
@@ -294,7 +296,7 @@ export default function TodayPage() {
       setPhase("done");
     } catch (err: any) {
       console.error(err);
-      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
+      setErrorMessage(tt.errorPrefix + (err?.message || JSON.stringify(err)));
       setPhase("error");
     }
   }
@@ -326,7 +328,7 @@ export default function TodayPage() {
       setPhase("done");
     } catch (err: any) {
       console.error(err);
-      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
+      setErrorMessage(tt.errorPrefix + (err?.message || JSON.stringify(err)));
       setPhase("error");
     }
   }
@@ -365,7 +367,7 @@ export default function TodayPage() {
       setPhase("done");
     } catch (err: any) {
       console.error(err);
-      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
+      setErrorMessage(tt.errorPrefix + (err?.message || JSON.stringify(err)));
       setPhase("error");
     }
   }
@@ -417,7 +419,7 @@ export default function TodayPage() {
       setPhase("done");
     } catch (err: any) {
       console.error(err);
-      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
+      setErrorMessage(tt.errorPrefix + (err?.message || JSON.stringify(err)));
       setPhase("error");
     }
   }
@@ -457,7 +459,7 @@ export default function TodayPage() {
       setPhase("done");
     } catch (err: any) {
       console.error(err);
-      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
+      setErrorMessage(tt.errorPrefix + (err?.message || JSON.stringify(err)));
       setPhase("error");
     }
   }
@@ -491,22 +493,22 @@ export default function TodayPage() {
       setPhase("done");
     } catch (err: any) {
       console.error(err);
-      setErrorMessage("Грешка: " + (err?.message || JSON.stringify(err)));
+      setErrorMessage(tt.errorPrefix + (err?.message || JSON.stringify(err)));
       setPhase("error");
     }
   }
 
   if (phase === "loading") {
-    return <LoadingScreen label="Зареждаме днешната ти тренировка…" />;
+    return <LoadingScreen label={tt.loading} />;
   }
 
   if (phase === "no-plan") {
     return (
       <EmptyState
-        title="Нямаш насрочена тренировка"
-        description="Или още нямаш активен план, или си влязъл с друг акаунт."
+        title={tt.noPlanTitle}
+        description={tt.noPlanDesc}
         ctaHref={localizedHref("/programs")}
-        ctaLabel="Разгледай програмите"
+        ctaLabel={tt.browsePrograms}
       />
     );
   }
@@ -515,9 +517,9 @@ export default function TodayPage() {
     return (
       <EmptyState
         title={programName}
-        description="Тази програма все още не е свързана с този екран — но всичките 8 програми вече имат готова логика, скоро ще бъде и тук."
+        description={tt.unsupportedDesc}
         ctaHref={localizedHref("/dashboard")}
-        ctaLabel="Обратно към таблото"
+        ctaLabel={tt.backToDashboard}
       />
     );
   }
@@ -526,16 +528,13 @@ export default function TodayPage() {
     return (
       <main className="min-h-screen bg-graphite px-6 py-16 text-chalk">
         <div className="mx-auto max-w-xl text-center">
-          <h1 className="font-display text-3xl font-semibold text-amber">Записано!</h1>
-          <p className="mt-4 text-chalkDim">
-            Следващата ти тренировка е насрочена за <strong className="text-chalk">{nextDate}</strong>,
-            изчислена спрямо резултата ти днес.
-          </p>
+          <h1 className="font-display text-3xl font-semibold text-amber">{tt.doneTitle}</h1>
+<p className="mt-4 text-chalkDim">{tt.nextScheduled(nextDate)}</p>
           <button
             onClick={loadWorkout}
             className="mt-8 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
           >
-            Виж следващата тренировка →
+            {tt.viewNext}
           </button>
 
           <ProductRecommendations placement="post-workout" />
@@ -549,7 +548,7 @@ export default function TodayPage() {
       <div className="mx-auto max-w-2xl">
         <h1 className="font-display text-3xl font-semibold">{programName}</h1>
         <p className="mt-1 text-chalkDim">
-          {workout?.session_name} · {workout?.scheduled_date}
+          {translateWorkoutText(workout?.session_name ?? "", locale)} · {workout?.scheduled_date}
         </p>
 
         {phase === "workout" && (
@@ -564,10 +563,8 @@ export default function TodayPage() {
               return (
                 <div>
                   <div className="flex items-center justify-between text-xs uppercase tracking-widest text-chalkDim">
-                    <span>Прогрес на тренировката</span>
-                    <span>
-                      {doneSets} / {totalSets} серии
-                    </span>
+                    <span>{tt.progressLabel}</span>
+<span>{tt.setsOf(doneSets, totalSets)}</span>
                   </div>
                   <div className="mt-2 h-1.5 w-full bg-white/10">
                     <div
@@ -583,7 +580,7 @@ export default function TodayPage() {
               <div key={name} className="border border-white/10">
                 <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-5 py-3">
                   <h2 className="font-display text-base font-semibold uppercase tracking-wide text-chalk">
-                    {name}
+                    {translateWorkoutText(name, locale)}
                   </h2>
                   <div className="flex gap-1">
                     {exerciseSets.map((s) => {
@@ -635,7 +632,7 @@ export default function TodayPage() {
                           </div>
                           {s.planned_weight === 0 && (
                             <div className="mt-1 flex items-center gap-2">
-                              <span className="text-xs text-chalkDim">С колко {unit}?</span>
+                              <span className="text-xs text-chalkDim">{tt.weightQuestion} {unit}?</span>
                               <input
                                 type="number"
                                 min={0}
@@ -647,19 +644,19 @@ export default function TodayPage() {
                                     [s.id]: inputToKg(Number(e.target.value) || 0, unit),
                                   })
                                 }
-                                placeholder="напр. 20"
+                                placeholder={tt.weightPlaceholder}
                                 className="w-16 border border-white/15 bg-transparent px-2 py-1 text-center text-xs text-chalk placeholder:text-chalkDim/50 focus:border-amber"
                               />
-                              <span className="text-xs text-chalkDim">{unit} (по избор)</span>
+                              <span className="text-xs text-chalkDim">{unit} ({tt.optionalLabel})</span>
                             </div>
                           )}
                           {(s.set_type === "test" || s.is_paused) && (
                             <div className="mt-1 flex gap-2">
                               {s.set_type === "test" && (
-                                <span className="text-xs uppercase tracking-wide text-steelLight">Проходка</span>
+                                <span className="text-xs uppercase tracking-wide text-steelLight">{tt.testLabel}</span>
                               )}
                               {s.is_paused && (
-                                <span className="text-xs uppercase tracking-wide text-amber">Пауза 2-3 сек</span>
+                                <span className="text-xs uppercase tracking-wide text-amber">{tt.pauseLabel}</span>
                               )}
                             </div>
                           )}
@@ -679,7 +676,7 @@ export default function TodayPage() {
                                 ? "border-green-600 bg-green-600/20 text-green-500"
                                 : "border-white/15 text-transparent hover:border-amber hover:text-amber/50"
                             }`}
-                            title={met ? "Отбелязано по план — кликни за отмяна" : "Отбележи като изпълнена по план"}
+                            title={met ? tt.confirmMarked : tt.confirmUnmark}
                           >
                             ✓
                           </button>
@@ -714,34 +711,30 @@ export default function TodayPage() {
 
             <div className="flex items-center justify-between border-t border-white/10 pt-6">
               <p className="text-sm text-chalkDim">
-                {sets.filter((s) => (actualReps[s.id] ?? 0) >= s.planned_reps || s.is_amrap || s.set_type === "test")
-                  .length}{" "}
-                от {sets.length} серии отбелязани
+                {tt.setsMarked(
+                  sets.filter((s) => (actualReps[s.id] ?? 0) >= s.planned_reps || s.is_amrap || s.set_type === "test")
+                    .length,
+                  sets.length
+                )}
               </p>
               <button
                 onClick={handleFinishWorkout}
                 className="border-2 border-amber bg-amber px-6 py-4 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
               >
-                Завърши тренировката →
+                {tt.finishButton}
               </button>
             </div>
 
             {todaysProductIds.length > 0 && (
-              <ProductRecommendations productIds={todaysProductIds} titleBg="За днешната тренировка" titleEn="For today's session" />
+              <ProductRecommendations productIds={todaysProductIds} titleBg={tt.forTodaySession} titleEn={tt.forTodaySession} />
             )}
           </div>
         )}
 
         {phase === "failure-reason" && (
           <div className="mt-8 border-2 border-amber p-6">
-            <h2 className="font-display text-lg font-semibold text-amber">
-              Не всички серии бяха изпълнени
-            </h2>
-            <p className="mt-2 text-sm text-chalkDim">
-              Няма проблем — избери причината, за да запазим точна история. Решението
-              (повторение на тежестта или намаление) следва вградените правила на
-              Starting Strength автоматично.
-            </p>
+            <h2 className="font-display text-lg font-semibold text-amber">{tt.failureTitle}</h2>
+            <p className="mt-2 text-sm text-chalkDim">{tt.failureDesc}</p>
             <select
               value={failureReason}
               onChange={(e) => setFailureReason(e.target.value)}
@@ -749,7 +742,7 @@ export default function TodayPage() {
             >
               {FAILURE_REASONS.map((r) => (
                 <option key={r.value} value={r.value}>
-                  {r.label}
+                  {tt.failureReasons[r.value as keyof typeof tt.failureReasons]}
                 </option>
               ))}
             </select>
@@ -757,20 +750,15 @@ export default function TodayPage() {
               onClick={handleFinishWorkout}
               className="mt-4 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
             >
-              Запази и продължи →
+              {tt.saveContinue}
             </button>
           </div>
         )}
 
         {phase === "confirm-max" && (
           <div className="mt-8 border-2 border-amber p-6">
-            <h2 className="font-display text-lg font-semibold text-amber">
-              Каква тежест реално вдигна на теста?
-            </h2>
-            <p className="mt-2 text-sm text-chalkDim">
-              Това е "проходката" — истинският опит за нов максимум, не планираната
-              тежест. Въведи реално постигнатото, дори ако е различно от плана.
-            </p>
+            <h2 className="font-display text-lg font-semibold text-amber">{tt.confirmMaxTitle}</h2>
+            <p className="mt-2 text-sm text-chalkDim">{tt.confirmMaxDesc}</p>
             <div className="mt-4 flex items-center gap-2">
               <input
                 type="number"
@@ -786,7 +774,7 @@ export default function TodayPage() {
               onClick={handleFinishSurovetsky}
               className="mt-4 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
             >
-              Запази новия максимум →
+              {tt.saveNewMax}
             </button>
           </div>
         )}
@@ -794,7 +782,7 @@ export default function TodayPage() {
         {phase === "submitting" && (
           <div className="mt-8 flex items-center gap-3 text-chalkDim">
             <div className="h-5 w-5 animate-spin border-2 border-amber border-t-transparent" />
-            Запазваме…
+            {tt.submitting}
           </div>
         )}
 
