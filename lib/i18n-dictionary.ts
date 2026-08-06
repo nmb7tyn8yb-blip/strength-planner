@@ -169,6 +169,50 @@ export interface TranslationShape {
     weightPlaceholder: string;
     forTodaySession: string;
   };
+  activePlanWarning: {
+    badge: string;
+    startedOn: (date: string) => string;
+    createNew: string;
+    newSeparate: string;
+    restOfSentence: string;
+    proLink: string;
+  };
+  createProgram: {
+    loadingProfile: string;
+    authRequired: string;
+    authRequiredDesc: string;
+    makeProfile: string;
+    doneTitle: string;
+    doneDesc: string;
+    goToToday: string;
+    title: string;
+    subtitle: string;
+    programNameLabel: string;
+    programNamePlaceholder: string;
+    deleteDay: string;
+    exerciseHeader: string;
+    setsHeader: string;
+    repsHeader: string;
+    kgHeader: string;
+    restHeader: string;
+    exercisePlaceholder: string;
+    setsPlaceholder: string;
+    repsPlaceholder: string;
+    kgPlaceholder: string;
+    restPlaceholder: string;
+    deleteExerciseLabel: string;
+    addExercise: string;
+    addDay: string;
+    savingButton: string;
+    createButton: string;
+    dayNamePrefix: (n: number) => string;
+    sessionExpiredError: string;
+    saveProgramError: string;
+    saveDayError: string;
+    saveExercisesError: string;
+    createPlanError: string;
+    genericError: string;
+  };
   programCalc: {
     backToProgram: string;
     title: string;
@@ -522,6 +566,53 @@ export const translations: Record<Locale, TranslationShape> = {
       weightPlaceholder: "напр. 20",
       forTodaySession: "За днешната тренировка",
     },
+    activePlanWarning: {
+      badge: "⚠ Вече имаш активен план",
+      startedOn: (date) => `започнат на ${date}.`,
+      createNew: "Ако продължиш, ще създадем",
+      newSeparate: "нов, отделен",
+      restOfSentence:
+        "план — старият ще си остане в историята ти (виждаш го от таблото), но вече няма да е активният по подразбиране.",
+      proLink: "Pro поддържа неограничени активни планове едновременно →",
+    },
+    createProgram: {
+      loadingProfile: "Проверяваме профила ти…",
+      authRequired: "Нужен е профил",
+      authRequiredDesc: "За да създадеш и следиш собствена програма, първо ти трябва профил (безплатно).",
+      makeProfile: "Направи профил →",
+      doneTitle: "Готово!",
+      doneDesc:
+        "Твоята програма е запазена. Първата тренировка вече те чака — сайтът ще повтаря шаблона ти всяка седмица и ще следи прогреса ти автоматично.",
+      goToToday: "Към днешната тренировка →",
+      title: "Създай своя програма",
+      subtitle:
+        "Определи седмичния си шаблон веднъж — сайтът ще го повтаря автоматично всяка седмица и ще ти показва днешната тренировка на ред, точно както при готовите програми. Промяна на тежести/повторения правиш, като редактираш шаблона си.",
+      programNameLabel: "Име на програмата",
+      programNamePlaceholder: "напр. Моята сплит програма",
+      deleteDay: "Изтрий деня",
+      exerciseHeader: "Упражнение",
+      setsHeader: "Серии",
+      repsHeader: "Повторения",
+      kgHeader: "Кг",
+      restHeader: "Почивка сек",
+      exercisePlaceholder: "Упражнение",
+      setsPlaceholder: "Серии",
+      repsPlaceholder: "Повт.",
+      kgPlaceholder: "Кг",
+      restPlaceholder: "Почивка сек",
+      deleteExerciseLabel: "Изтрий упражнението",
+      addExercise: "+ Добави упражнение",
+      addDay: "+ Добави тренировъчен ден",
+      savingButton: "Запазваме…",
+      createButton: "Създай програмата →",
+      dayNamePrefix: (n) => `Ден ${n}`,
+      sessionExpiredError: "Сесията изтече — влез отново.",
+      saveProgramError: "Не успяхме да запазим програмата.",
+      saveDayError: "Не успяхме да запазим тренировъчния ден.",
+      saveExercisesError: "Не успяхме да запазим упражненията.",
+      createPlanError: "Не успяхме да създадем плана.",
+      genericError: "Нещо се обърка. Опитай пак.",
+    },
   },
   en: {
     nav: {
@@ -797,6 +888,53 @@ export const translations: Record<Locale, TranslationShape> = {
       errorPrefix: "Error: ",
       weightPlaceholder: "e.g. 20",
       forTodaySession: "For today's session",
+    },
+    activePlanWarning: {
+      badge: "⚠ You already have an active plan",
+      startedOn: (date) => `started on ${date}.`,
+      createNew: "If you continue, we'll create a",
+      newSeparate: "new, separate",
+      restOfSentence:
+        "plan — the old one stays in your history (visible from the dashboard), but it won't be the default active one anymore.",
+      proLink: "Pro supports unlimited active plans at once →",
+    },
+    createProgram: {
+      loadingProfile: "Checking your profile…",
+      authRequired: "Account required",
+      authRequiredDesc: "To create and track your own program, you first need a free account.",
+      makeProfile: "Create account →",
+      doneTitle: "Done!",
+      doneDesc:
+        "Your program is saved. Your first workout is ready — the site will repeat your template every week and track your progress automatically.",
+      goToToday: "Go to today's workout →",
+      title: "Build your own program",
+      subtitle:
+        "Set your weekly template once — the site will repeat it automatically every week and show today's workout in order, just like the built-in programs. Change weights/reps by editing your template.",
+      programNameLabel: "Program name",
+      programNamePlaceholder: "e.g. My split routine",
+      deleteDay: "Delete day",
+      exerciseHeader: "Exercise",
+      setsHeader: "Sets",
+      repsHeader: "Reps",
+      kgHeader: "Kg",
+      restHeader: "Rest sec",
+      exercisePlaceholder: "Exercise",
+      setsPlaceholder: "Sets",
+      repsPlaceholder: "Reps",
+      kgPlaceholder: "Kg",
+      restPlaceholder: "Rest sec",
+      deleteExerciseLabel: "Delete exercise",
+      addExercise: "+ Add exercise",
+      addDay: "+ Add training day",
+      savingButton: "Saving…",
+      createButton: "Create program →",
+      dayNamePrefix: (n) => `Day ${n}`,
+      sessionExpiredError: "Your session expired — please log in again.",
+      saveProgramError: "We couldn't save the program.",
+      saveDayError: "We couldn't save the training day.",
+      saveExercisesError: "We couldn't save the exercises.",
+      createPlanError: "We couldn't create the plan.",
+      genericError: "Something went wrong. Please try again.",
     },
   },
 };
