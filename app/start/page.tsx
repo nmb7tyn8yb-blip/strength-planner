@@ -115,10 +115,20 @@ function StartPageInner() {
         : await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(translateAuthError(error.message));
       return;
     }
     setStep("profile");
+  }
+
+  function translateAuthError(message: string): string {
+    const rateLimitMatch = message.match(/after (\d+) seconds/i);
+    if (rateLimitMatch) return t.start.authErrorRateLimit(rateLimitMatch[1]);
+    if (/already registered/i.test(message)) return t.start.authErrorAlreadyRegistered;
+    if (/invalid login credentials/i.test(message)) return t.start.authErrorInvalidCredentials;
+    if (/password.*at least/i.test(message)) return t.start.authErrorWeakPassword;
+    if (/email not confirmed/i.test(message)) return t.start.authErrorEmailNotConfirmed;
+    return message; // непозната грешка — показваме оригиналното съобщение
   }
 
   async function handleProfileSubmit(e: React.FormEvent) {
