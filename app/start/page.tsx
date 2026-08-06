@@ -374,15 +374,18 @@ function StartPageInner() {
             {existingActivePlan && (
               <div className="mt-6 border-2 border-amber p-5">
                 <p className="font-display text-sm font-semibold uppercase tracking-wide text-amber">
-                  ⚠ Вече имаш активен план
+                  {t.activePlanWarning.badge}
                 </p>
                 <p className="mt-2 text-sm text-chalk">
-                  <strong>{existingActivePlan.name}</strong>, започнат на {existingActivePlan.date}. Ако
-                  продължиш, ще създадем <strong>нов, отделен</strong> план — старият ще си остане в
-                  историята ти (виждаш го от таблото), но вече няма да е активният по подразбиране.
+                  <strong>{existingActivePlan.name}</strong>, {t.activePlanWarning.startedOn(existingActivePlan.date)}{" "}
+                  {t.activePlanWarning.createNew} <strong>{t.activePlanWarning.newSeparate}</strong>{" "}
+                  {t.activePlanWarning.restOfSentence}
                 </p>
-                <a href="/pro" className="mt-2 inline-block text-xs text-amber underline-offset-4 hover:underline">
-                  Pro поддържа неограничени активни планове едновременно →
+                <a
+                  href={localizedHref("/pro")}
+                  className="mt-2 inline-block text-xs text-amber underline-offset-4 hover:underline"
+                >
+                  {t.activePlanWarning.proLink}
                 </a>
               </div>
             )}
