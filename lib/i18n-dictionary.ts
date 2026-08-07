@@ -83,6 +83,8 @@ export interface TranslationShape {
     strengthLevelPrefix: string; // "X.XX× bodyweight"
     moreToNextTier: (amount: number, unit: string, tier: string) => string;
     repTableTitle: string;
+    useAndReturn: string;
+    returningBanner: string;
     formulaNote: string;
     strengthDisclaimer: string;
   };
@@ -325,6 +327,7 @@ export interface TranslationShape {
     daysPerWeekLabel: string;
     startingMaxesLabel: string;
     maxPlaceholder: string;
+    unknownMax: string;
     saveButton: string;
     savingButton: string;
     doneTitle: string;
@@ -339,6 +342,7 @@ export interface TranslationShape {
     authErrorInvalidCredentials: string;
     authErrorWeakPassword: string;
     authErrorEmailNotConfirmed: string;
+    authErrorEmailRateLimit: string;
   };
 }
 
@@ -429,6 +433,8 @@ export const translations: Record<Locale, TranslationShape> = {
       strengthLevelPrefix: "× телесното тегло",
       moreToNextTier: (amount, unit, tier) => `Още ${amount} ${unit} до ниво ${tier}.`,
       repTableTitle: "Тежест за други повторения (изчислено от максимума)",
+      useAndReturn: "Използвай тази тежест и се върни в плана →",
+      returningBanner: "Изчисляваш максимум, за да продължиш плана си — след изчислението ще се върнеш автоматично.",
       formulaNote: "Тези оценки са формула, не тест — реалният ти максимум може да варира с ±5-10% според деня, техниката и умората.",
       strengthDisclaimer:
         "Тези нива са ориентировъчни — обобщение на общоприети, закръглени съотношения тегло/собствено тегло от множество публични източници. Не са точно възпроизвеждане на конкретна изследователска таблица (напр. Lon Kilgore/ExRx, които са базирани на реални състезателни данни, не формула) и реално варират според извадката. Приемай резултата като насока, не като прецизно измерване.",
@@ -522,6 +528,7 @@ export const translations: Record<Locale, TranslationShape> = {
       daysPerWeekLabel: "Дни седмично",
       startingMaxesLabel: "Стартови максимуми (kg) — попълни каквото знаеш",
       maxPlaceholder: "напр. 80",
+      unknownMax: "Не знаеш максимума? →",
       saveButton: "Създай моята програма",
       savingButton: "Запазваме…",
       doneTitle: "Готово!",
@@ -537,6 +544,7 @@ export const translations: Record<Locale, TranslationShape> = {
       authErrorInvalidCredentials: "Грешен имейл или парола.",
       authErrorWeakPassword: "Паролата трябва да е поне 6 символа.",
       authErrorEmailNotConfirmed: "Провери пощата си — трябва да потвърдиш имейла преди да влезеш.",
+      authErrorEmailRateLimit: "Изпратени са твърде много имейли скоро — изчакай малко и опитай пак.",
     },
     programCalc: {
       backToProgram: "← Назад към програмата",
@@ -804,6 +812,8 @@ export const translations: Record<Locale, TranslationShape> = {
       strengthLevelPrefix: "× bodyweight",
       moreToNextTier: (amount, unit, tier) => `${amount} ${unit} to reach ${tier}.`,
       repTableTitle: "Weight for other rep ranges (from your estimated max)",
+      useAndReturn: "Use this weight and return to your plan →",
+      returningBanner: "You're calculating a max to continue your plan — you'll return automatically after this.",
       formulaNote: "These are formula estimates, not a test — your real max may vary ±5-10% depending on the day, technique, and fatigue.",
       strengthDisclaimer:
         "These levels are approximate — a summary of commonly cited, rounded weight-to-bodyweight ratios from multiple public sources. They are not an exact reproduction of any single research table (e.g. Lon Kilgore/ExRx, which are based on real competition data, not a formula) and vary by sample. Treat the result as a guide, not a precise measurement.",
@@ -897,6 +907,7 @@ export const translations: Record<Locale, TranslationShape> = {
       daysPerWeekLabel: "Days per week",
       startingMaxesLabel: "Starting maxes (kg) — fill in what you know",
       maxPlaceholder: "e.g. 80",
+      unknownMax: "Don't know your max? →",
       saveButton: "Create my program",
       savingButton: "Saving…",
       doneTitle: "Done!",
@@ -912,6 +923,7 @@ export const translations: Record<Locale, TranslationShape> = {
       authErrorInvalidCredentials: "Incorrect email or password.",
       authErrorWeakPassword: "Password must be at least 6 characters.",
       authErrorEmailNotConfirmed: "Check your inbox — you need to confirm your email before logging in.",
+      authErrorEmailRateLimit: "Too many emails sent recently — please wait a bit and try again.",
     },
     programCalc: {
       backToProgram: "← Back to program",
