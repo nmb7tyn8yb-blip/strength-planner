@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
@@ -8,6 +8,15 @@ import { UnitProvider } from "@/components/unit-provider";
 export const metadata: Metadata = {
   title: "SilaPlan",
   description: "Персонален генератор и дневник за силови тренировки",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "SilaPlan",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0908",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
