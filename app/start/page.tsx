@@ -128,6 +128,7 @@ function StartPageInner() {
     if (/invalid login credentials/i.test(message)) return t.start.authErrorInvalidCredentials;
     if (/password.*at least/i.test(message)) return t.start.authErrorWeakPassword;
     if (/email not confirmed/i.test(message)) return t.start.authErrorEmailNotConfirmed;
+    if (/email rate limit/i.test(message)) return t.start.authErrorEmailRateLimit;
     return message; // непозната грешка — показваме оригиналното съобщение
   }
 
@@ -482,7 +483,21 @@ function StartPageInner() {
                 <div className="mt-2 grid grid-cols-2 gap-4">
                   {PRIMARY_LIFTS.map((lift) => (
                     <div key={lift.key}>
-                      <span className="text-sm text-chalk">{t.calculator.exercises[lift.key]}</span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-chalk">{t.calculator.exercises[lift.key]}</span>
+                        <a
+                          href={localizedHref(
+                            `/1rm-calculator?lift=${lift.key}&returnTo=${encodeURIComponent(
+                              localizedHref(
+                                `/start?program=${programSlug}&squat=${maxes.squat ?? ""}&bench=${maxes.bench_press ?? ""}&deadlift=${maxes.deadlift ?? ""}&press=${maxes.overhead_press ?? ""}`
+                              )
+                            )}`
+                          )}
+                          className="text-xs text-steelLight underline-offset-4 hover:underline"
+                        >
+                          {s.unknownMax}
+                        </a>
+                      </div>
                       <input
                         type="number"
                         min={0}
