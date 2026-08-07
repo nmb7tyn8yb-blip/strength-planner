@@ -72,6 +72,13 @@ export default function AdminPage() {
         >
           → Управление на потребители (Free/Pro нива)
         </Link>
+        <br />
+        <Link
+          href="/admin/activity"
+          className="mt-2 inline-block text-sm text-steelLight underline-offset-4 hover:underline"
+        >
+          → Активност (регистрации, популярност, скорошни действия)
+        </Link>
 
         <div className="mt-10 grid gap-px overflow-hidden border border-white/10 bg-white/10">
           {programs.map((p) => (
