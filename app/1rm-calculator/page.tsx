@@ -86,6 +86,10 @@ function OneRepMaxCalculatorInner() {
         <h1 className="mt-4 font-display text-3xl font-semibold md:text-4xl">{c.title}</h1>
         <p className="mt-2 text-chalkDim">{c.subtitle}</p>
 
+        {returnTo && (
+          <p className="mt-4 border-l-2 border-amber pl-4 text-sm text-amber">{c.returningBanner}</p>
+        )}
+
         <form onSubmit={handleSubmit} className="mt-8 grid gap-5">
           <div>
             <label className="text-xs uppercase tracking-widest text-chalkDim">{c.exerciseLabel}</label>
@@ -203,7 +207,7 @@ function OneRepMaxCalculatorInner() {
                 href={buildReturnUrl() ?? "#"}
                 className="mt-4 inline-flex items-center gap-2 border-2 border-amber bg-amber px-6 py-3 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
               >
-                {displayWeight(estimate.average, unit)} {unit} — {c.exercises[lift]} →
+                {c.useAndReturn}
               </Link>
             )}
 
