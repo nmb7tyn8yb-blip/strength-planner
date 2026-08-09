@@ -14,6 +14,9 @@ interface ExerciseRow {
   weight: string;
   rest: string;
   isAmrap: boolean;
+  mode: "kg" | "percent";
+  percentOf: "squat" | "bench_press" | "deadlift" | "overhead_press";
+  percent: string;
 }
 
 interface SessionRow {
@@ -22,7 +25,17 @@ interface SessionRow {
 }
 
 function emptyExercise(): ExerciseRow {
-  return { name: "", sets: "3", reps: "10", weight: "0", rest: "90", isAmrap: false };
+  return {
+    name: "",
+    sets: "3",
+    reps: "10",
+    weight: "0",
+    rest: "90",
+    isAmrap: false,
+    mode: "kg",
+    percentOf: "squat",
+    percent: "70",
+  };
 }
 
 function emptySession(name: string): SessionRow {
@@ -39,6 +52,12 @@ export default function CreateProgramPage() {
   const [programName, setProgramName] = useState("");
   const [sessions, setSessions] = useState<SessionRow[]>([emptySession(cp.dayNamePrefix(1))]);
   const [existingActivePlan, setExistingActivePlan] = useState<{ name: string; date: string } | null>(null);
+  const [maxes, setMaxes] = useState<Record<string, string>>({
+    squat: "",
+    bench_press: "",
+    deadlift: "",
+    overhead_press: "",
+  });
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -63,6 +82,13 @@ export default function CreateProgramPage() {
       }
     });
   }, []);
+
+  function computeWeightKg(ex: ExerciseRow): number {
+    if (ex.mode === "kg") return Number(ex.weight) || 0;
+    const max = Number(maxes[ex.percentOf]) || 0;
+    const pct = Number(ex.percent) || 0;
+    return Math.round(((max * pct) / 100) * 2) / 2; // закръглено до 0.5кг
+  }
 
   function updateSessionName(sIndex: number, name: string) {
     const next = [...sessions];
@@ -137,7 +163,7 @@ export default function CreateProgramPage() {
             exercise_name: ex.name.trim(),
             sets: Number(ex.sets) || 1,
             reps: Number(ex.reps) || 1,
-            weight_kg: Number(ex.weight) || 0,
+            weight_kg: computeWeightKg(ex),
             rest_seconds: Number(ex.rest) || 90,
             is_amrap: ex.isAmrap,
           }));
@@ -238,6 +264,27 @@ export default function CreateProgramPage() {
             />
           </div>
 
+          <div className="border border-white/10 p-4">
+            <p className="text-xs uppercase tracking-widest text-chalkDim">{cp.maxesLabel}</p>
+            <p className="mt-1 text-xs text-chalkDim">{cp.maxesHint}</p>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {(["squat", "bench_press", "deadlift", "overhead_press"] as const).map((lift) => (
+                <div key={lift}>
+                  <label className="text-xs text-chalkDim">{t.calculator.exercises[lift]}</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.5}
+                    value={maxes[lift]}
+                    onChange={(e) => setMaxes({ ...maxes, [lift]: e.target.value })}
+                    placeholder={cp.maxPlaceholder}
+                    className="mt-1 w-full border-2 border-white/15 bg-transparent px-3 py-2 text-sm text-chalk placeholder:text-chalkDim focus:border-amber"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
           {sessions.map((session, sIndex) => (
             <div key={sIndex} className="border-2 border-white/15 p-5">
               <div className="flex items-center justify-between gap-3">
@@ -259,10 +306,11 @@ export default function CreateProgramPage() {
 
               <div className="mt-4 grid gap-3">
                 <div className="grid grid-cols-12 gap-2 px-3 text-xs uppercase tracking-wide text-chalkDim">
-                  <span className="col-span-4">{cp.exerciseHeader}</span>
+                  <span className="col-span-3">{cp.exerciseHeader}</span>
                   <span className="col-span-2 text-center">{cp.setsHeader}</span>
                   <span className="col-span-2 text-center">{cp.repsHeader}</span>
                   <span className="col-span-2 text-center">{cp.kgHeader}</span>
+                  <span className="col-span-1"></span>
                   <span className="col-span-1 text-center">{cp.restHeader}</span>
                   <span className="col-span-1"></span>
                 </div>
@@ -272,7 +320,7 @@ export default function CreateProgramPage() {
                       value={ex.name}
                       onChange={(e) => updateExercise(sIndex, eIndex, "name", e.target.value)}
                       placeholder={cp.exercisePlaceholder}
-                      className="col-span-4 border-2 border-white/15 bg-transparent px-2 py-2 text-sm text-chalk placeholder:text-chalkDim focus:border-amber"
+                      className="col-span-3 border-2 border-white/15 bg-transparent px-2 py-2 text-sm text-chalk placeholder:text-chalkDim focus:border-amber"
                     />
                     <input
                       value={ex.sets}
@@ -290,15 +338,51 @@ export default function CreateProgramPage() {
                       placeholder={cp.repsPlaceholder}
                       className="col-span-2 border-2 border-white/15 bg-transparent px-2 py-2 text-center text-sm text-chalk placeholder:text-chalkDim focus:border-amber"
                     />
-                    <input
-                      value={ex.weight}
-                      onChange={(e) => updateExercise(sIndex, eIndex, "weight", e.target.value)}
-                      type="number"
-                      min={0}
-                      step={0.5}
-                      placeholder={cp.kgPlaceholder}
-                      className="col-span-2 border-2 border-white/15 bg-transparent px-2 py-2 text-center text-sm text-chalk placeholder:text-chalkDim focus:border-amber"
-                    />
+                    {ex.mode === "kg" ? (
+                      <input
+                        value={ex.weight}
+                        onChange={(e) => updateExercise(sIndex, eIndex, "weight", e.target.value)}
+                        type="number"
+                        min={0}
+                        step={0.5}
+                        placeholder={cp.kgPlaceholder}
+                        className="col-span-2 border-2 border-white/15 bg-transparent px-2 py-2 text-center text-sm text-chalk placeholder:text-chalkDim focus:border-amber"
+                      />
+                    ) : (
+                      <div className="col-span-2 grid gap-1">
+                        <select
+                          value={ex.percentOf}
+                          onChange={(e) => updateExercise(sIndex, eIndex, "percentOf", e.target.value)}
+                          className="border-2 border-white/15 bg-graphite px-1 py-1 text-xs text-chalk focus:border-amber"
+                        >
+                          <option value="squat">{t.calculator.exercises.squat}</option>
+                          <option value="bench_press">{t.calculator.exercises.bench_press}</option>
+                          <option value="deadlift">{t.calculator.exercises.deadlift}</option>
+                          <option value="overhead_press">{t.calculator.exercises.overhead_press}</option>
+                        </select>
+                        <div className="flex items-center gap-1">
+                          <input
+                            value={ex.percent}
+                            onChange={(e) => updateExercise(sIndex, eIndex, "percent", e.target.value)}
+                            type="number"
+                            min={0}
+                            max={200}
+                            className="w-full border-2 border-white/15 bg-transparent px-1 py-1 text-center text-xs text-chalk focus:border-amber"
+                          />
+                          <span className="text-xs text-chalkDim">%</span>
+                        </div>
+                        <p className="text-center text-[10px] text-amber">≈ {computeWeightKg(ex)} kg</p>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateExercise(sIndex, eIndex, "mode", ex.mode === "kg" ? "percent" : "kg")
+                      }
+                      className="col-span-1 text-[10px] uppercase text-steelLight underline-offset-2 hover:underline"
+                    >
+                      {ex.mode === "kg" ? cp.switchToPercent : cp.switchToKg}
+                    </button>
                     <input
                       value={ex.rest}
                       onChange={(e) => updateExercise(sIndex, eIndex, "rest", e.target.value)}
