@@ -29,6 +29,9 @@ export default function AdminActivityPage() {
   const [programPopularity, setProgramPopularity] = useState<{ name: string; count: number }[]>([]);
   const [recentSignups, setRecentSignups] = useState<RecentSignup[]>([]);
   const [recentWorkouts, setRecentWorkouts] = useState<RecentWorkout[]>([]);
+  const [totalViews7d, setTotalViews7d] = useState(0);
+  const [topPages, setTopPages] = useState<{ path: string; count: number }[]>([]);
+  const [viewsByDay, setViewsByDay] = useState<{ day: string; count: number }[]>([]);
 
   useEffect(() => {
     load();
@@ -105,6 +108,37 @@ export default function AdminActivityPage() {
       );
     }
 
+    // Посещения — последните 7 дни
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: views } = await supabase
+      .from("page_views")
+      .select("path, created_at")
+      .gte("created_at", sevenDaysAgo);
+
+    if (views) {
+      setTotalViews7d(views.length);
+
+      const byPage: Record<string, number> = {};
+      const byDay: Record<string, number> = {};
+      views.forEach((v) => {
+        byPage[v.path] = (byPage[v.path] ?? 0) + 1;
+        const day = v.created_at.slice(0, 10);
+        byDay[day] = (byDay[day] ?? 0) + 1;
+      });
+
+      setTopPages(
+        Object.entries(byPage)
+          .map(([path, count]) => ({ path, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 10)
+      );
+      setViewsByDay(
+        Object.entries(byDay)
+          .map(([day, count]) => ({ day, count }))
+          .sort((a, b) => a.day.localeCompare(b.day))
+      );
+    }
+
     setPhase("ready");
   }
 
@@ -129,21 +163,16 @@ export default function AdminActivityPage() {
         </Link>
         <h1 className="mt-4 font-display text-3xl font-semibold">Активност</h1>
         <p className="mt-2 text-chalkDim">
-          Обобщена картина на регистрациите, активните планове и скорошните действия.
-          За детайлна статистика на посещенията виж{" "}
-          <a
-            href="https://vercel.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-amber underline-offset-4 hover:underline"
-          >
-            Vercel Analytics
-          </a>
-          .
+          Обобщена картина на регистрациите, активните планове и скорошните действия. Собствено
+          проследяване на посещенията — не зависи от рекламни блокери.
         </p>
 
         {/* Ключови числа */}
-        <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden border border-white/10 bg-white/10 sm:grid-cols-5">
+        <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden border border-white/10 bg-white/10 sm:grid-cols-6">
+          <div className="bg-graphite p-5 text-center">
+            <p className="font-display text-3xl font-bold text-steelLight">{totalViews7d}</p>
+            <p className="mt-1 text-xs uppercase tracking-widest text-chalkDim">Посещения (7 дни)</p>
+          </div>
           <div className="bg-graphite p-5 text-center">
             <p className="font-display text-3xl font-bold text-chalk">{totalUsers}</p>
             <p className="mt-1 text-xs uppercase tracking-widest text-chalkDim">Регистрирани</p>
@@ -163,6 +192,45 @@ export default function AdminActivityPage() {
           <div className="bg-graphite p-5 text-center">
             <p className="font-display text-3xl font-bold text-amber">{tierCounts.founding_member ?? 0}</p>
             <p className="mt-1 text-xs uppercase tracking-widest text-chalkDim">Founding</p>
+          </div>
+        </div>
+
+        {/* Посещения по дни */}
+        <div className="mt-10">
+          <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
+            Посещения по дни (последните 7)
+          </h2>
+          <div className="mt-3 flex items-end gap-2" style={{ height: "100px" }}>
+            {viewsByDay.length === 0 && <p className="text-sm text-chalkDim">Все още няма записани посещения.</p>}
+            {viewsByDay.map((v) => {
+              const max = Math.max(...viewsByDay.map((x) => x.count), 1);
+              return (
+                <div key={v.day} className="flex flex-1 flex-col items-center gap-1">
+                  <div
+                    className="w-full bg-steel"
+                    style={{ height: `${Math.max((v.count / max) * 80, 4)}px` }}
+                  />
+                  <span className="text-[10px] text-chalkDim">{v.day.slice(5)}</span>
+                  <span className="text-xs font-semibold text-chalk">{v.count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Най-посещавани страници */}
+        <div className="mt-10">
+          <h2 className="font-display text-sm uppercase tracking-widest text-chalkDim">
+            Най-посещавани страници (последните 7 дни)
+          </h2>
+          <div className="mt-3 grid gap-2">
+            {topPages.length === 0 && <p className="text-sm text-chalkDim">Все още няма данни.</p>}
+            {topPages.map((p) => (
+              <div key={p.path} className="flex items-center justify-between border border-white/10 px-4 py-2">
+                <span className="text-sm text-chalk">{p.path}</span>
+                <span className="font-display text-sm font-semibold text-steelLight">{p.count}</span>
+              </div>
+            ))}
           </div>
         </div>
 
