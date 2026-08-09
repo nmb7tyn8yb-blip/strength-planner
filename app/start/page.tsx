@@ -115,7 +115,7 @@ function StartPageInner() {
         : await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      setErrorMessage(translateAuthError(error.message));
+      setErrorMessage(translateAuthError(error.message ?? ""));
       return;
     }
     setStep("profile");
@@ -129,7 +129,13 @@ function StartPageInner() {
     if (/password.*at least/i.test(message)) return t.start.authErrorWeakPassword;
     if (/email not confirmed/i.test(message)) return t.start.authErrorEmailNotConfirmed;
     if (/email rate limit/i.test(message)) return t.start.authErrorEmailRateLimit;
-    return message; // непозната грешка — показваме оригиналното съобщение
+
+    // предпазна мрежа — ако съобщението изглежда като суров/безсмислен текст
+    // (напр. "{}", празно, JSON остатък), показваме общото съобщение вместо него
+    const looksRaw = !message || message.trim().length < 3 || /^[{}\[\]"]*$/.test(message.trim());
+    if (looksRaw) return t.start.errorGeneric;
+
+    return message; // непозната, но смислена грешка — показваме оригиналния текст
   }
 
   async function handleProfileSubmit(e: React.FormEvent) {
