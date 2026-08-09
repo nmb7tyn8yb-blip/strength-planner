@@ -191,6 +191,11 @@ export interface TranslationShape {
     subtitle: string;
     programNameLabel: string;
     programNamePlaceholder: string;
+    maxesLabel: string;
+    maxesHint: string;
+    maxPlaceholder: string;
+    switchToPercent: string;
+    switchToKg: string;
     deleteDay: string;
     exerciseHeader: string;
     setsHeader: string;
@@ -654,6 +659,11 @@ export const translations: Record<Locale, TranslationShape> = {
         "Определи седмичния си шаблон веднъж — сайтът ще го повтаря автоматично всяка седмица и ще ти показва днешната тренировка на ред, точно както при готовите програми. Промяна на тежести/повторения правиш, като редактираш шаблона си.",
       programNameLabel: "Име на програмата",
       programNamePlaceholder: "напр. Моята сплит програма",
+      maxesLabel: "Твоите максимуми (по избор)",
+      maxesHint: "Попълни, ако искаш тежести на упражнения да се изчисляват автоматично като процент от максимума ти, вместо да пишеш килограми ръчно за всяко.",
+      maxPlaceholder: "напр. 100",
+      switchToPercent: "% от макс",
+      switchToKg: "фикс. кг",
       deleteDay: "Изтрий деня",
       exerciseHeader: "Упражнение",
       setsHeader: "Серии",
@@ -1033,6 +1043,11 @@ export const translations: Record<Locale, TranslationShape> = {
         "Set your weekly template once — the site will repeat it automatically every week and show today's workout in order, just like the built-in programs. Change weights/reps by editing your template.",
       programNameLabel: "Program name",
       programNamePlaceholder: "e.g. My split routine",
+      maxesLabel: "Your maxes (optional)",
+      maxesHint: "Fill in if you want exercise weights to calculate automatically as a percentage of your max, instead of typing kg manually for each one.",
+      maxPlaceholder: "e.g. 100",
+      switchToPercent: "% of max",
+      switchToKg: "fixed kg",
       deleteDay: "Delete day",
       exerciseHeader: "Exercise",
       setsHeader: "Sets",
