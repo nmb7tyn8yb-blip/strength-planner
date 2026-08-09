@@ -4,6 +4,7 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { LanguageProvider } from "@/components/language-provider";
 import { UnitProvider } from "@/components/unit-provider";
+import PageViewTracker from "@/components/page-view-tracker";
 
 export const metadata: Metadata = {
   title: "SilaPlan",
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-screen flex-col">
         <LanguageProvider>
           <UnitProvider>
+            <PageViewTracker />
             <Navbar />
             <div className="flex-1">{children}</div>
             <Footer />
