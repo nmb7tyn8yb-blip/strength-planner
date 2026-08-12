@@ -1,12 +1,11 @@
 "use client";
 
-import { Suspense, useState, useEffect, useRef } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
 import { useLanguage } from "@/components/language-provider";
 import { useUnit } from "@/components/unit-provider";
-import { trackMetaCustomEvent } from "@/components/meta-pixel";
 import { displayWeight, inputToKg, type WeightUnit } from "@/lib/units";
 import type { TranslationShape } from "@/lib/i18n-dictionary";
 import {
@@ -119,14 +118,6 @@ function CalculateInner() {
   const searchParams = useSearchParams();
   const programSlug = searchParams.get("program") ?? "";
   const supported = SUPPORTED_PROGRAMS.includes(programSlug);
-  const trackedProgramRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!supported || !programSlug) return;
-    if (trackedProgramRef.current === programSlug) return; // вече проследено — не изпраща пак при re-render
-    trackedProgramRef.current = programSlug;
-    trackMetaCustomEvent("ProgramSelected", { program: programSlug });
-  }, [programSlug, supported]);
 
   const [maxes, setMaxes] = useState<Record<WendlerLift, string>>({
     squat: searchParams.get("squat") ?? "",
