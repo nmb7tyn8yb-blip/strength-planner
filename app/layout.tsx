@@ -5,6 +5,7 @@ import Footer from "@/components/footer";
 import { LanguageProvider } from "@/components/language-provider";
 import { UnitProvider } from "@/components/unit-provider";
 import PageViewTracker from "@/components/page-view-tracker";
+import MetaPixel from "@/components/meta-pixel";
 
 export const metadata: Metadata = {
   title: "SilaPlan",
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="bg">
       <body className="flex min-h-screen flex-col">
+        <MetaPixel />
         <LanguageProvider>
           <UnitProvider>
             <PageViewTracker />
