@@ -11,18 +11,19 @@ import {
   type RecommendationResult,
 } from "@/lib/recommendation-engine";
 import { useLanguage } from "@/components/language-provider";
-import { trackMetaCustomEvent } from "@/components/meta-pixel";
+import { trackMetaEvent, trackMetaCustomEvent } from "@/components/meta-pixel";
 
 type Phase = "asking" | "loading" | "results" | "error";
 
 export default function QuizPage() {
   const { t, localizedHref } = useLanguage();
+  const hasTrackedView = useRef(false);
   const hasTrackedStart = useRef(false);
 
   useEffect(() => {
-    if (hasTrackedStart.current) return;
-    hasTrackedStart.current = true;
-    trackMetaCustomEvent("QuestionnaireStarted");
+    if (hasTrackedView.current) return;
+    hasTrackedView.current = true;
+    trackMetaEvent("ViewContent", { content_name: "quiz" });
   }, []);
   const q = t.quiz;
 
@@ -38,6 +39,11 @@ export default function QuizPage() {
   const progressPct = Math.round(((stepIndex + 1) / QUIZ_QUESTIONS.length) * 100);
 
   async function handleSelect(value: unknown) {
+    if (!hasTrackedStart.current) {
+      hasTrackedStart.current = true;
+      trackMetaCustomEvent("QuestionnaireStarted");
+    }
+
     const updatedAnswers = { ...answers, [question.key]: value };
     setAnswers(updatedAnswers);
 
