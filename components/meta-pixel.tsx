@@ -53,3 +53,14 @@ export function trackMetaEvent(eventName: string, params?: Record<string, unknow
     (window as any).fbq("track", eventName, params);
   }
 }
+
+/**
+ * За СОБСТВЕНИ (не стандартни на Meta) имена на събития — Meta изисква
+ * различен метод ("trackCustom") за имена извън техния фиксиран списък
+ * (Lead, CompleteRegistration, Purchase и т.н.).
+ */
+export function trackMetaCustomEvent(eventName: string, params?: Record<string, unknown>) {
+  if (typeof window !== "undefined" && (window as any).fbq) {
+    (window as any).fbq("trackCustom", eventName, params);
+  }
+}
