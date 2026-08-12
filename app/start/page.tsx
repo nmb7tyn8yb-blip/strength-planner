@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
 import { useLanguage } from "@/components/language-provider";
+import { trackMetaEvent } from "@/components/meta-pixel";
 import { createFirstStartingStrengthWorkout, createFirstWendlerWorkout, createFirstHepburnWorkout, createFirstTexasWorkout, createFirstSurovetskyWorkout, createFirstJuggernautClassicWorkout, createFirstJuggernautExcelWorkout } from "@/lib/workout-engine";
 
 type Step = "loading" | "auth" | "profile" | "saving" | "done" | "error";
@@ -323,6 +324,8 @@ function StartPageInner() {
 
       setStep("done");
       setPlanReady(firstWorkoutCreated);
+      trackMetaEvent("CompleteRegistration");
+      if (firstWorkoutCreated) trackMetaEvent("PlanGenerated");
     } catch (err) {
       setErrorMessage(s.errorGeneric);
       setStep("error");
