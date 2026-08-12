@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
 import {
@@ -11,15 +11,18 @@ import {
   type RecommendationResult,
 } from "@/lib/recommendation-engine";
 import { useLanguage } from "@/components/language-provider";
-import { trackMetaEvent } from "@/components/meta-pixel";
+import { trackMetaCustomEvent } from "@/components/meta-pixel";
 
 type Phase = "asking" | "loading" | "results" | "error";
 
 export default function QuizPage() {
   const { t, localizedHref } = useLanguage();
+  const hasTrackedStart = useRef(false);
 
   useEffect(() => {
-    trackMetaEvent("Lead", { content_name: "quiz_started" });
+    if (hasTrackedStart.current) return;
+    hasTrackedStart.current = true;
+    trackMetaCustomEvent("QuestionnaireStarted");
   }, []);
   const q = t.quiz;
 
