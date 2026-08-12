@@ -1,10 +1,10 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
 import { useLanguage } from "@/components/language-provider";
-import { trackMetaEvent } from "@/components/meta-pixel";
+import { trackMetaEvent, trackMetaCustomEvent } from "@/components/meta-pixel";
 import { createFirstStartingStrengthWorkout, createFirstWendlerWorkout, createFirstHepburnWorkout, createFirstTexasWorkout, createFirstSurovetskyWorkout, createFirstJuggernautClassicWorkout, createFirstJuggernautExcelWorkout } from "@/lib/workout-engine";
 
 type Step = "loading" | "auth" | "profile" | "saving" | "done" | "error";
@@ -33,6 +33,7 @@ function StartPageInner() {
   const programSlug = searchParams.get("program") ?? "";
 
   const [step, setStep] = useState<Step>("loading");
+  const hasTrackedPlanGenerated = useRef(false);
   const [authMode, setAuthMode] = useState<AuthMode>("signup");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -325,7 +326,10 @@ function StartPageInner() {
       setStep("done");
       setPlanReady(firstWorkoutCreated);
       trackMetaEvent("CompleteRegistration");
-      if (firstWorkoutCreated) trackMetaEvent("PlanGenerated");
+      if (firstWorkoutCreated && !hasTrackedPlanGenerated.current) {
+        hasTrackedPlanGenerated.current = true;
+        trackMetaCustomEvent("PlanGenerated");
+      }
     } catch (err) {
       setErrorMessage(s.errorGeneric);
       setStep("error");
