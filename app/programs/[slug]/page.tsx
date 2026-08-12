@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase-client";
 import { useLanguage } from "@/components/language-provider";
 import LoadingScreen from "@/components/loading-screen";
 import ProductRecommendations from "@/components/product-recommendations";
+import { trackMetaCustomEvent } from "@/components/meta-pixel";
 import { PROGRAM_PLACEMENT_MAP } from "@/lib/affiliate-products";
 
 interface RecommendationProfile {
@@ -228,6 +229,7 @@ export default function ProgramDetailPage() {
         <div className="mt-12 flex flex-wrap gap-4">
           <Link
             href={localizedHref(`/calculate?program=${program.slug}`)}
+            onClick={() => trackMetaCustomEvent("ProgramSelected", { program: program.slug })}
             className="inline-flex items-center gap-3 border-2 border-amber bg-amber px-7 py-4 font-display text-sm font-semibold uppercase tracking-wider text-graphite transition hover:bg-transparent hover:text-amber"
           >
             {d.calculateButton}
