@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
 import { useLanguage } from "@/components/language-provider";
+import { trackMetaEvent } from "@/components/meta-pixel";
 
 const FEATURES_BG = [
   "Неограничени тренировъчни цикли",
@@ -90,6 +91,7 @@ export default function ProPage() {
       // дублиран имейл или мрежова грешка — пак показваме успех
     } finally {
       setSubmitted(true);
+      trackMetaEvent("Lead", { content_name: "pro_waitlist" });
       setSubmitting(false);
     }
   }
